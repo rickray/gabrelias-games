@@ -12,12 +12,15 @@ The old standalone Bubble Zoo site still works for now: https://rickray.github.i
 
 1. Open Silk.
 2. Go to https://rickray.github.io/gabrelias-games/
-3. Tap a game tile (start with Bubble Zoo).
+3. Tap a game tile.
 4. Optional: bookmark the home page, or use Silk’s Add to Home Screen so it opens full-screen next time.
 
 ## Games
 
 - **Bubble Zoo** — tap bubbles, meet animals. Lives in `games/bubble-zoo/`.
+- **Snack Time** — feed hungry animals the food they want. Lives in `games/snack-time/`.
+- **Hide and Seek** — find the animal you hear. Lives in `games/hide-and-seek/`.
+- **Zoo Train** — hop animals onto the train cars. Lives in `games/zoo-train/`.
 
 ## Add another game later
 
