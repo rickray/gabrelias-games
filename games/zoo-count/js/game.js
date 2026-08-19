@@ -54,9 +54,9 @@
     return arr;
   }
 
-  function pluralizeAnimal(name, count) {
-    if (count === 1) return name;
+  function pluralAnimal(name) {
     if (name === "butterfly") return "butterflies";
+    if (name === "bunny") return "bunnies";
     if (name === "fish") return "fish";
     return name + "s";
   }
@@ -67,8 +67,7 @@
       clearTimeout(askTimeout);
       askTimeout = 0;
     }
-    var question = "How many " + pluralizeAnimal(currentAnimal, currentCount) + "?";
-    GGAudio.say(question, { rate: 0.86, pitch: 1.2 });
+    GGAudio.say("How many " + pluralAnimal(currentAnimal) + "?", { rate: 0.86, pitch: 1.2 });
   }
 
   function layout() {
@@ -257,7 +256,7 @@
     spawnDust(tile.x, tile.y + tile.h * 0.45);
     GGAudio.wiggle();
     GGAudio.say("That's " + tile.num, { rate: 0.86, pitch: 1.15 });
-    GGAudio.say("How many " + pluralizeAnimal(currentAnimal, currentCount) + "?", {
+    GGAudio.say("How many " + pluralAnimal(currentAnimal) + "?", {
       delay: 1300,
       interrupt: false,
       rate: 0.86,
@@ -523,7 +522,7 @@
         a.mode = "tap-hop";
         a.t = 0;
         GGAudio.bounce();
-        GGAudio.say(formatAnimalName(a.name), { rate: 0.9, pitch: 1.2 });
+        GGAudio.say(a.name, { rate: 0.9, pitch: 1.2 });
         return;
       }
 
@@ -536,9 +535,4 @@
       render();
     }
   });
-
-  function formatAnimalName(name) {
-    if (!name) return "";
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }
 })();

@@ -36,6 +36,7 @@
   var gradCache = {};
   var asked = false;
   var askTimeout = 0;
+  var NUMBER_WORDS = ["", "One", "Two", "Three"];
 
   function rand(a, b) {
     return a + Math.random() * (b - a);
@@ -54,11 +55,6 @@
       arr[j] = t;
     }
     return arr;
-  }
-
-  function formatAnimalName(name) {
-    if (!name) return "";
-    return name.charAt(0).toUpperCase() + name.slice(1);
   }
 
   function metrics() {
@@ -113,13 +109,12 @@
   function promptNextCar() {
     var nextIdx = nextEmptyCarIndex();
     if (nextIdx >= 0) {
-      var carNum = nextIdx + 1;
       asked = true;
       if (askTimeout) {
         clearTimeout(askTimeout);
         askTimeout = 0;
       }
-      GGAudio.say("Car " + carNum + "!", { rate: 0.86, pitch: 1.2 });
+      GGAudio.say("Find the " + (nextIdx + 1), { rate: 0.86, pitch: 1.2 });
     }
   }
 
@@ -467,11 +462,22 @@
     var badgeH = h * 0.34;
     var badgeX = x + w * 0.5;
     var badgeY = y - h * 0.24;
+    var isTarget = !rider && trainMode === "idle" && !busy && idx === nextEmptyCarIndex();
+
+    if (isTarget) {
+      ctx.save();
+      ctx.globalAlpha = 0.45 + Math.sin(time * 5) * 0.35;
+      ctx.strokeStyle = "#ffe14a";
+      ctx.lineWidth = 7;
+      roundRect(badgeX - badgeW * 0.5 - 5, badgeY - badgeH * 0.5 - 5, badgeW + 10, badgeH + 10, 8);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.fillStyle = "rgba(255,255,255,0.92)";
     roundRect(badgeX - badgeW * 0.5, badgeY - badgeH * 0.5, badgeW, badgeH, 6);
     ctx.fill();
-    ctx.strokeStyle = palette.rim;
+    ctx.strokeStyle = isTarget ? "#e0a010" : palette.rim;
     ctx.lineWidth = 2.2;
     ctx.stroke();
 
@@ -680,9 +686,24 @@
       landed: false
     };
 
-    var carNum = slot + 1;
     GGAudio.toot();
-    GGAudio.say("Car " + carNum + "! " + formatAnimalName(a.name) + "!", { rate: 0.86, pitch: 1.2 });
+    GGAudio.say(NUMBER_WORDS[slot + 1] + "!", { rate: 0.88, pitch: 1.25 });
+  }
+
+  function onWrongCar(carIdx) {
+    carWiggle[carIdx] = 0.5;
+    GGAudio.wiggle();
+    GGAudio.say("That's " + (carIdx + 1), { rate: 0.86, pitch: 1.15 });
+    var want = nextEmptyCarIndex();
+    if (want >= 0) {
+      GGAudio.say("Find the " + (want + 1), {
+        delay: 1300,
+        interrupt: false,
+        rate: 0.86,
+        pitch: 1.2
+      });
+    }
+    asked = true;
   }
 
   function update(dt) {
@@ -834,10 +855,15 @@
       var carIdx = hitCarIndex(x, y);
       if (carIdx >= 0) {
         if (cars[carIdx]) {
-          /* Car is already full! */
           carWiggle[carIdx] = 0.5;
           GGAudio.wiggle();
           GGAudio.say("Car " + (carIdx + 1) + " is full", { rate: 0.86, pitch: 1.15 });
+          return;
+        }
+
+        var want = nextEmptyCarIndex();
+        if (carIdx !== want) {
+          onWrongCar(carIdx);
           return;
         }
 

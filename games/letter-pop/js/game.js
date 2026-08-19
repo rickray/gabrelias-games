@@ -39,6 +39,7 @@
   var busy = false;
   var askTimeout = 0;
   var lastInteraction = 0;
+  var letterCard = { x: 0, y: 0, w: 120, h: 120, scale: 1, rot: 0 };
 
   var BUBBLE_COLORS = [
     { body: "rgba(255,77,154,0.24)", rim: "#ff8ac4", band: "rgba(255,120,200,0.32)", text: "#c01070" },
@@ -95,13 +96,28 @@
     return true;
   }
 
+  function layout() {
+    var unit = Math.min(W, H);
+    var isLandscape = W > H;
+    var cardSize = isLandscape ? Math.min(110, unit * 0.18) : Math.min(130, unit * 0.2);
+    letterCard.w = cardSize * 1.3;
+    letterCard.h = cardSize;
+    letterCard.x = W * 0.5;
+    letterCard.y = Math.max(cardSize * 0.55 + 16, H * 0.13);
+  }
+
+  function skyMinY(r) {
+    return Math.max((r || 0) + 10, letterCard.y + letterCard.h * 0.62);
+  }
+
   function createBubble(letter, existing) {
     var r = bubbleRadius() * rand(0.92, 1.08);
     var x, y, tries = 0;
     var margin = r + 16;
+    var y0 = skyMinY(r);
     do {
       x = rand(margin, W - margin);
-      y = rand(margin + 20, H * 0.72);
+      y = rand(y0, H * 0.72);
       tries++;
     } while (!farEnough(x, y, r, null) && tries < 45);
 
@@ -154,6 +170,8 @@
       targetLetter = activeLetters[1] || targetLetter;
     }
     lastTargetLetter = targetLetter;
+    letterCard.scale = 1.22;
+    letterCard.rot = rand(-0.12, 0.12);
 
     /* Ensure at least one bubble has targetLetter */
     var hasTarget = bubbles.some(function (b) { return !b.dying && b.letter === targetLetter; });
@@ -292,6 +310,12 @@
     asked = true;
   }
 
+  function hitLetterCard(x, y) {
+    var dx = Math.abs(x - letterCard.x);
+    var dy = Math.abs(y - letterCard.y);
+    return dx < letterCard.w * 0.6 && dy < letterCard.h * 0.65;
+  }
+
   function hitTest(x, y) {
     var i, b, dx, dy, best = null, bestD = 1e9, d;
     for (i = 0; i < bubbles.length; i++) {
@@ -392,6 +416,58 @@
     ctx.restore();
   }
 
+  function drawLetterCard() {
+    var x = letterCard.x;
+    var y = letterCard.y;
+    var w = letterCard.w;
+    var h = letterCard.h;
+    var s = letterCard.scale;
+    var rad = Math.min(w, h) * 0.42;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(letterCard.rot);
+    ctx.scale(s, s);
+
+    ctx.fillStyle = "rgba(20, 60, 90, 0.18)";
+    ctx.beginPath();
+    ctx.ellipse(0, h * 0.46, w * 0.5, h * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    var bg = ctx.createLinearGradient(0, -h * 0.5, 0, h * 0.5);
+    bg.addColorStop(0, "#ffffff");
+    bg.addColorStop(1, "#fff4d0");
+
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.5 + rad, -h * 0.5);
+    ctx.arcTo(w * 0.5, -h * 0.5, w * 0.5, h * 0.5, rad);
+    ctx.arcTo(w * 0.5, h * 0.5, -w * 0.5, h * 0.5, rad);
+    ctx.arcTo(-w * 0.5, h * 0.5, -w * 0.5, -h * 0.5, rad);
+    ctx.arcTo(-w * 0.5, -h * 0.5, w * 0.5, -h * 0.5, rad);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#ff8a1a";
+    ctx.lineWidth = 5.5;
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+    ctx.beginPath();
+    ctx.ellipse(0, -h * 0.22, w * 0.38, h * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = "900 " + Math.floor(h * 0.68) + "px 'Avenir Next', 'Segoe UI', system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#c02070";
+    ctx.fillText(targetLetter, 0, 3);
+    ctx.fillStyle = "#ff4da0";
+    ctx.fillText(targetLetter, 0, 0);
+
+    ctx.restore();
+  }
+
   function drawBurst(p) {
     var fade = 1 - p.t / p.life;
     ctx.globalAlpha = Math.max(0, fade);
@@ -447,6 +523,11 @@
       lastInteraction = time;
     }
 
+    if (letterCard.scale > 1) {
+      letterCard.scale = Math.max(1, letterCard.scale - dt * 1.8);
+      letterCard.rot *= Math.max(0, 1 - dt * 3);
+    }
+
     for (i = bubbles.length - 1; i >= 0; i--) {
       b = bubbles[i];
       if (b.wobbleTime > 0) {
@@ -463,7 +544,7 @@
 
       if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
       if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
-      if (b.y < b.r + 10) { b.y = b.r + 10; b.vy = Math.abs(b.vy); }
+      if (b.y < skyMinY(b.r)) { b.y = skyMinY(b.r); b.vy = Math.abs(b.vy); }
       if (b.y > H * 0.75) { b.y = H * 0.75; b.vy = -Math.abs(b.vy); }
 
       if (b.scale < 1) b.scale = Math.min(1, b.scale + dt * 2.4);
@@ -521,6 +602,7 @@
       ctx.globalAlpha = 1;
     }
 
+    drawLetterCard();
     scene.drawParticles(ctx);
   }
 
@@ -531,19 +613,28 @@
       W = w;
       H = h;
       scene.resize(w, h);
+      layout();
       var i, b;
       for (i = 0; i < bubbles.length; i++) {
         b = bubbles[i];
         b.x = Math.max(b.r, Math.min(W - b.r, b.x));
-        b.y = Math.max(b.r + 10, Math.min(H * 0.75, b.y));
+        b.y = Math.max(skyMinY(b.r), Math.min(H * 0.75, b.y));
       }
     },
     start: function () {
+      layout();
       spawnInitialBubbles();
     },
     tap: function (x, y) {
       lastInteraction = time;
       if (busy) return;
+
+      if (hitLetterCard(x, y)) {
+        GGAudio.bounce();
+        promptSpeech();
+        letterCard.scale = 1.15;
+        return;
+      }
 
       var b = hitTest(x, y);
       if (!b) {

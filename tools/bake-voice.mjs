@@ -43,12 +43,36 @@ const ANIMALS = [
   "owl", "pig", "duck", "cat", "butterfly", "turtle", "bee", "monkey"
 ];
 
+/* ABC Zoo / Letter Pop — only letters that start an animal name. */
+const LETTERS = {
+  B: ["bunny", "bee", "butterfly"],
+  C: ["cat"],
+  D: ["duck"],
+  E: ["elephant"],
+  F: ["frog", "fish"],
+  G: ["giraffe"],
+  L: ["lion"],
+  M: ["monkey"],
+  O: ["owl"],
+  P: ["panda", "penguin", "pig"],
+  T: ["turtle"]
+};
+
+const NUMBER_WORDS = ["", "One", "Two", "Three", "Four", "Five"];
+
 /* Snack Time's tables, kept in step with games/snack-time/js/foods.js. */
 const WANT = {
   banana: "a banana", bamboo: "bamboo", carrot: "a carrot", apple: "an apple",
   leaf: "a leaf", peanut: "a peanut", fish: "a fish", corn: "corn",
   steak: "a steak", milk: "milk"
 };
+
+function plural(name) {
+  if (name === "butterfly") return "butterflies";
+  if (name === "bunny") return "bunnies";
+  if (name === "fish") return "fish";
+  return name + "s";
+}
 
 function lines() {
   const set = new Set();
@@ -75,8 +99,28 @@ function lines() {
   }
   set.add("Yum!");
 
-  /* Zoo Train. */
+  /* Zoo Train / Number Train. */
   set.add("All aboard!");
+
+  /* ABC Zoo / Letter Pop. "B is for" + "bunny" reuses the animal clips. */
+  for (const letter of Object.keys(LETTERS)) {
+    set.add(letter + " is for");
+    set.add("Find the " + letter);
+    set.add("That's " + letter);
+  }
+
+  /* Zoo Count. Always plural: "How many lions?" even when the answer is 1. */
+  for (const a of ANIMALS) set.add("How many " + plural(a) + "?");
+  for (let n = 1; n <= 5; n++) {
+    set.add(NUMBER_WORDS[n] + "!");
+    set.add("That's " + n);
+  }
+
+  /* Number Train. "Find the 1" matches Letter Pop; "One!" is the reward. */
+  for (let n = 1; n <= 3; n++) {
+    set.add("Find the " + n);
+    set.add("Car " + n + " is full");
+  }
 
   return Array.from(set);
 }
@@ -238,6 +282,8 @@ try {
     if (source) {
       await toM4a(source, out);
       recorded++;
+    } else if (await exists(out) && !argv.includes("--force")) {
+      /* ponytail: skip re-encoding existing clips; --force to rebuild all */
     } else {
       await speak(text, voice, rate, tmp, edgeTts);
       await toM4a(tmp, out);

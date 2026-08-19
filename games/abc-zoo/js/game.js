@@ -74,11 +74,6 @@
     return others;
   }
 
-  function formatAnimalName(name) {
-    if (!name) return "";
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }
-
   function promptSpeech() {
     asked = true;
     if (askTimeout) {
@@ -203,7 +198,7 @@
     scene.confetti(a.x, a.y);
     scene.sparkle(letterCard.x, letterCard.y);
     GGAudio.sparkle();
-    GGAudio.say(formatAnimalName(a.name) + "!", { rate: 0.88, pitch: 1.25 });
+    GGAudio.say(a.name, { rate: 0.88, pitch: 1.25 });
   }
 
   function onWrong(a) {

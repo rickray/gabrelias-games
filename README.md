@@ -73,7 +73,7 @@ node tools/bake-voice.mjs --voice Samantha --rate 160     # old compact voice
 node tools/bake-voice.mjs --list                          # show the lines, bake nothing
 ```
 
-118 clips, about 0.8 MB of AAC, listed in `voice/index.json`. Sentences are stored as reusable fragments — "The lion wants" plus "a banana" — so Snack Time needs 26 clips rather than one for each of 160 animal-and-food pairs. `GGAudio.say()` matches a line against the available clips longest-first and plays the pieces back to back.
+183 clips, about 1.2 MB of AAC, listed in `voice/index.json`. Sentences are stored as reusable fragments — "The lion wants" plus "a banana", "B is for" plus "bunny" — so Snack Time and ABC Zoo do not need a clip for every combination. `GGAudio.say()` matches a line against the available clips longest-first and plays the pieces back to back.
 
 **To use a real human voice** — which is what a 4-year-old actually wants — drop recordings into `voice/raw/` named after the slugs printed by `--list` (`wheres-the-lion.wav`, `yum.wav`, …) and re-run the baker. Recordings always win over synthesis, and you can do them a handful at a time; anything missing stays synthesised.
 

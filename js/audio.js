@@ -401,19 +401,23 @@
 
   /* -------------------------------------------------------- home theme
 
-     Twinkle Twinkle Little Star (public domain) as a quiet music box.
+     Old MacDonald Had a Farm (public domain) as a quiet music box.
      Tablets will not autoplay, so the hub starts this from a real tap.
      Phrases are scheduled a bar at a time so mute/leave can cut it. */
 
-  var TWINKLE = [
-    [0, 0, 7, 7, 9, 9, 7],
-    [5, 5, 4, 4, 2, 2, 0],
-    [7, 7, 5, 5, 4, 4, 2],
-    [7, 7, 5, 5, 4, 4, 2],
-    [0, 0, 7, 7, 9, 9, 7],
-    [5, 5, 4, 4, 2, 2, 0]
+  var OLD_MAC = [
+    [0, 0, 0, 7, 9, 9, 7],
+    [4, 4, 2, 2, 0],
+    [0, 0, 0, 7, 9, 9, 7],
+    [4, 4, 2, 2, 0],
+    [7, 7, 7, 7, 4, 4, 4],
+    [7, 7, 7, 7, 4, 4, 4],
+    [7, 7, 4, 7, 7, 4],
+    [7, 7, 4, 4, 2, 2, 0],
+    [0, 0, 0, 7, 9, 9, 7],
+    [4, 4, 2, 2, 0]
   ];
-  var THEME_BEAT = 0.46;
+  var THEME_BEAT = 0.42;
   var themeOn = false;
   var themeTimer = 0;
   var themeGen = 0;
@@ -444,7 +448,7 @@
 
     function bar() {
       if (gen !== themeGen || !themeOn || muted) return;
-      var notes = TWINKLE[phrase];
+      var notes = OLD_MAC[phrase];
       var t = now() + 0.03;
       var at = 0;
       var i, long, freq;
@@ -458,7 +462,7 @@
         at += long ? THEME_BEAT * 2 : THEME_BEAT;
       }
       phrase++;
-      if (phrase >= TWINKLE.length) {
+      if (phrase >= OLD_MAC.length) {
         phrase = 0;
         at += 1.4;
       }

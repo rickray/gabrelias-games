@@ -134,4 +134,104 @@ for (const [letter, anims] of Object.entries(expectedMapping)) {
 }
 console.log("✓ Letter to animal mapping strictly validated.");
 
+// 6. Baked voice must cover the four learning games (tablet TTS is the fallback,
+//    and on Fire/Silk it is often silent).
+const voiceIndexPath = path.join(root, "voice/index.json");
+if (!fs.existsSync(voiceIndexPath)) {
+  throw new Error("Missing voice/index.json");
+}
+const voiceIndex = JSON.parse(fs.readFileSync(voiceIndexPath, "utf8"));
+const clips = voiceIndex.clips || {};
+const requiredLines = [
+  "B is for",
+  "M is for",
+  "Find the M",
+  "That's P",
+  "How many lions?",
+  "How many butterflies?",
+  "How many fish?",
+  "Three!",
+  "That's 2",
+  "Find the 1",
+  "Car 2 is full",
+  "All aboard!",
+  "monkey",
+  "bunny"
+];
+for (const line of requiredLines) {
+  if (!clips[line]) {
+    throw new Error(`voice/index.json missing clip for "${line}"`);
+  }
+  const clipFile = path.join(root, "voice", clips[line]);
+  if (!fs.existsSync(clipFile)) {
+    throw new Error(`Missing voice file ${clips[line]} for "${line}"`);
+  }
+}
+console.log("✓ Learning-game voice clips are present.");
+
+function segment(text) {
+  const keys = Object.keys(clips).sort((a, b) => b.length - a.length);
+  let rest = text;
+  const files = [];
+  while (rest.length) {
+    if (rest.charAt(0) === " ") {
+      rest = rest.slice(1);
+      continue;
+    }
+    let hit = null;
+    for (const key of keys) {
+      if (rest.length >= key.length && rest.slice(0, key.length) === key) {
+        hit = key;
+        break;
+      }
+    }
+    if (!hit) return null;
+    files.push(clips[hit]);
+    rest = rest.slice(hit.length);
+  }
+  return files.length ? files : null;
+}
+
+function pluralAnimal(name) {
+  if (name === "butterfly") return "butterflies";
+  if (name === "bunny") return "bunnies";
+  if (name === "fish") return "fish";
+  return name + "s";
+}
+
+const spoken = [];
+for (const [letter, anims] of Object.entries(expectedMapping)) {
+  spoken.push("Find the " + letter);
+  spoken.push("That's " + letter);
+  spoken.push(letter + " is for");
+  for (const a of anims) spoken.push(letter + " is for " + a);
+}
+for (const a of Object.values(expectedMapping).flat()) {
+  spoken.push(a);
+  spoken.push("That's the " + a);
+  spoken.push("How many " + pluralAnimal(a) + "?");
+}
+for (const n of [1, 2, 3, 4, 5]) {
+  spoken.push(["", "One", "Two", "Three", "Four", "Five"][n] + "!");
+  spoken.push("That's " + n);
+}
+for (const n of [1, 2, 3]) {
+  spoken.push("Find the " + n);
+  spoken.push("Car " + n + " is full");
+}
+spoken.push("All aboard!");
+
+for (const line of spoken) {
+  if (!segment(line)) {
+    throw new Error(`No baked clip coverage for spoken line "${line}"`);
+  }
+}
+console.log(`✓ ${spoken.length} learning-game spoken lines match baked clips.`);
+
+const letterPop = fs.readFileSync(path.join(root, "games/letter-pop/js/game.js"), "utf8");
+if (!letterPop.includes("drawLetterCard") || !letterPop.includes("targetLetter")) {
+  throw new Error("Letter Pop must show the target letter on screen");
+}
+console.log("✓ Letter Pop shows the target letter on screen.");
+
 console.log("\nALL VERIFICATIONS PASSED SUCCESSFULLY!");
