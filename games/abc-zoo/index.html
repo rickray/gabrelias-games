@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4ec5ff">
+  <meta name="description" content="ABC Zoo — explore letters and animal friends. A joyful learning game for little kids.">
+  <title>ABC Zoo</title>
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <link rel="stylesheet" href="../../css/game.css">
+  <link rel="stylesheet" href="../../css/controls.css">
+  <link rel="icon" href="../../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../../icon-192.png">
+</head>
+<body>
+  <a class="home-btn" href="../../index.html" aria-label="Gabrelia's Games home">
+    <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true">
+      <path fill="#c46a20" d="M12 3.2 3 11h3v9h5v-6h2v6h5v-9h3L12 3.2z"/>
+    </svg>
+  </a>
+  <button class="mute-btn" id="mute" type="button" aria-pressed="false" aria-label="Turn sound on or off">
+    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+      <path fill="#c46a20" d="M4 9v6h4l5 4V5L8 9H4z"/>
+      <path class="wav" fill="none" stroke="#c46a20" stroke-width="2" stroke-linecap="round" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>
+      <line class="slash" x1="4" y1="4" x2="20" y2="20" stroke="#d04040" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <canvas id="game" aria-label="ABC Zoo game"></canvas>
+  <script src="../../js/audio.js"></script>
+  <script src="js/animals.js"></script>
+  <script src="../../js/shell.js"></script>
+  <script src="../../js/scene.js"></script>
+  <script src="js/game.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("../../sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
