@@ -1,0 +1,151 @@
+/* Gabrelia's Games hub — bright, tablet-first, Fire HD / Silk */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: linear-gradient(180deg, #4ec5ff 0%, #b8f0ff 50%, #9be36a 100%);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+.hub {
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero {
+  width: 100%;
+  max-width: 920px;
+  text-align: center;
+  padding: 12px 8px 20px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(42px, 9vw, 80px);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow:
+    0 4px 0 #2ea0e0,
+    0 8px 18px rgba(20, 80, 120, 0.25);
+}
+
+.grid {
+  width: 100%;
+  max-width: 920px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 22px;
+  align-content: start;
+}
+
+.tile {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 200px;
+  min-width: 160px;
+  padding: 20px 16px 18px;
+  border-radius: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.tile-name {
+  font-size: clamp(22px, 4.5vw, 30px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.tile-art {
+  font-size: 72px;
+  line-height: 1;
+}
+
+.tile-bubble {
+  background: linear-gradient(180deg, #ff8ad8 0%, #ff5ec8 55%, #ff8a1a 100%);
+  border: 6px solid #fff;
+  box-shadow: 0 8px 0 #e040a8, 0 14px 24px rgba(80, 20, 60, 0.18);
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(160, 20, 90, 0.35);
+}
+
+.tile-bubble:active {
+  transform: translateY(6px);
+  box-shadow: 0 2px 0 #e040a8, 0 6px 12px rgba(80, 20, 60, 0.16);
+}
+
+.bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 28%, rgba(255,255,255,0.95), rgba(255,255,255,0.15) 42%, rgba(255,255,255,0) 70%);
+  border: 3px solid rgba(255,255,255,0.55);
+}
+
+.b1 { width: 56px; height: 56px; top: 16px; left: 18px; }
+.b2 { width: 36px; height: 36px; top: 28px; right: 22px; }
+.b3 { width: 28px; height: 28px; bottom: 22px; left: 28px; }
+
+.tile-soon {
+  background: rgba(255, 255, 255, 0.38);
+  border: 5px dashed rgba(255, 255, 255, 0.7);
+  box-shadow: none;
+  color: rgba(40, 90, 50, 0.55);
+}
+
+.tile-soon .tile-art {
+  opacity: 0.55;
+  font-size: 56px;
+}
+
+@media (orientation: landscape) {
+  html, body {
+    background: linear-gradient(180deg, #4ec5ff 0%, #c8f4ff 50%, #8ed85a 100%);
+  }
+
+  .hero {
+    padding-bottom: 12px;
+  }
+
+  .hero h1 {
+    font-size: clamp(36px, 7vw, 64px);
+  }
+
+  .tile {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
