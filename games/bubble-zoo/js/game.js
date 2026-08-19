@@ -8,26 +8,26 @@
 
   var W = 800;
   var H = 600;
-  var dpr = 1;
+  var time = 0;
+
+  var scene = GGScene.create({ ground: 0.78 });
 
   var bubbles = [];
   var animals = [];
   var bursts = [];
-  var clouds = [];
-  var flowers = [];
+  var rings = [];
   var lastAnimal = "";
-  var lastTap = 0;
   var lastInteractionTime = 0;
 
   var BUBBLE_COLORS = [
-    { body: "#ff4d9a", rim: "#ff8ac4", shine: "rgba(255,255,255,0.85)" },
-    { body: "#ff8a1a", rim: "#ffc36a", shine: "rgba(255,255,255,0.85)" },
-    { body: "#ffe14a", rim: "#fff3a0", shine: "rgba(255,255,255,0.8)" },
-    { body: "#4de06a", rim: "#9af0aa", shine: "rgba(255,255,255,0.85)" },
-    { body: "#2ec5ff", rim: "#8ae0ff", shine: "rgba(255,255,255,0.85)" },
-    { body: "#7a5cff", rim: "#b8a6ff", shine: "rgba(255,255,255,0.85)" },
-    { body: "#ff5a5a", rim: "#ff9a9a", shine: "rgba(255,255,255,0.85)" },
-    { body: "#00d4c8", rim: "#7af0ea", shine: "rgba(255,255,255,0.85)" }
+    { body: "rgba(255,77,154,0.22)", rim: "#ff8ac4", band: "rgba(255,120,200,0.28)", shine: "rgba(255,255,255,0.9)" },
+    { body: "rgba(255,138,26,0.22)", rim: "#ffc36a", band: "rgba(255,180,80,0.28)", shine: "rgba(255,255,255,0.9)" },
+    { body: "rgba(255,225,74,0.22)", rim: "#fff3a0", band: "rgba(255,230,120,0.28)", shine: "rgba(255,255,255,0.88)" },
+    { body: "rgba(77,224,106,0.22)", rim: "#9af0aa", band: "rgba(120,230,150,0.28)", shine: "rgba(255,255,255,0.9)" },
+    { body: "rgba(46,197,255,0.22)", rim: "#8ae0ff", band: "rgba(100,210,255,0.28)", shine: "rgba(255,255,255,0.9)" },
+    { body: "rgba(122,92,255,0.22)", rim: "#b8a6ff", band: "rgba(160,140,255,0.28)", shine: "rgba(255,255,255,0.9)" },
+    { body: "rgba(255,90,90,0.22)", rim: "#ff9a9a", band: "rgba(255,140,140,0.28)", shine: "rgba(255,255,255,0.9)" },
+    { body: "rgba(0,212,200,0.22)", rim: "#7af0ea", band: "rgba(80,230,220,0.28)", shine: "rgba(255,255,255,0.9)" }
   ];
 
   function rand(a, b) {
@@ -82,8 +82,9 @@
       vy: rand(-14, 14),
       wobble: rand(0, Math.PI * 2),
       wobbleSpeed: rand(1.1, 2.2),
+      phase: rand(0, Math.PI * 2),
       color: color,
-      born: performance.now() / 1000,
+      born: time,
       scale: existing ? 1 : 0,
       dying: false,
       dieT: 0
@@ -95,7 +96,7 @@
   }
 
   function pickAnimal() {
-    var names = BubbleAnimals.names;
+    var names = GGAnimals.names;
     var name = pick(names);
     var guard = 0;
     while (name === lastAnimal && names.length > 1 && guard < 8) {
@@ -116,47 +117,65 @@
       vy: rand(-40, -18),
       t: 0,
       life: 2.4,
-      scale: 0
+      scale: 0,
+      sx: 1,
+      sy: 1
     });
-    if (window.BubbleAudio) BubbleAudio.animal(name);
+    GGAudio.say(name);
   }
 
   function spawnBurst(x, y, color) {
-    var i, n = 16;
+    var i, n = 12;
     for (i = 0; i < n; i++) {
       var a = (i / n) * Math.PI * 2 + rand(-0.2, 0.2);
-      var sp = rand(80, 280);
+      var sp = rand(90, 260);
       bursts.push({
         x: x,
         y: y,
         vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        r: rand(5, 12),
-        color: i % 2 ? color.body : color.rim,
-        life: rand(0.35, 0.7),
-        t: 0
+        vy: Math.sin(a) * sp - 40,
+        r: rand(3, 7),
+        color: i % 2 ? color.rim : "#ffffff",
+        life: rand(0.4, 0.75),
+        t: 0,
+        kind: "drop"
       });
     }
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 6; i++) {
       bursts.push({
         x: x,
         y: y,
-        vx: rand(-60, 60),
-        vy: rand(-160, -40),
-        r: rand(3, 6),
+        vx: rand(-50, 50),
+        vy: rand(-140, -30),
+        r: rand(2, 5),
         color: "#fff6a0",
-        life: rand(0.4, 0.8),
-        t: 0
+        life: rand(0.35, 0.65),
+        t: 0,
+        kind: "drop"
       });
     }
+  }
+
+  function spawnRing(x, y, color, r0) {
+    rings.push({
+      x: x,
+      y: y,
+      r: r0 * 0.55,
+      maxR: r0 * 2.1,
+      color: color.rim,
+      life: 0.45,
+      t: 0
+    });
   }
 
   function popBubble(b) {
     if (b.dying) return;
     b.dying = true;
     b.dieT = 0;
-    if (window.BubbleAudio) BubbleAudio.pop();
+    GGAudio.pop();
     spawnBurst(b.x, b.y, b.color);
+    spawnRing(b.x, b.y, b.color, b.r);
+    scene.sparkle(b.x, b.y);
     spawnAnimal(b.x, b.y);
   }
 
@@ -173,7 +192,8 @@
         r: rand(3, 6),
         color: pick(["#ffffff", "#fff6a0", "#c8f4ff"]),
         life: rand(0.3, 0.55),
-        t: 0
+        t: 0,
+        kind: "drop"
       });
     }
   }
@@ -194,189 +214,86 @@
     return best;
   }
 
-  function layoutDecor() {
-    clouds = [];
-    flowers = [];
-    var i, n = W > H ? 6 : 4;
-    for (i = 0; i < n; i++) {
-      clouds.push({
-        x: (i + 0.3) * (W / n) + rand(-30, 30),
-        y: rand(H * 0.06, H * 0.28),
-        s: rand(0.7, 1.3),
-        drift: rand(4, 12)
-      });
-    }
-    n = W > H ? 10 : 7;
-    for (i = 0; i < n; i++) {
-      flowers.push({
-        x: (i + 0.4) * (W / n) + rand(-16, 16),
-        y: rand(H * 0.82, H * 0.96),
-        color: pick(["#ff4d9a", "#ff8a1a", "#ffe14a", "#ff5ad5", "#7a5cff"]),
-        s: rand(0.8, 1.3)
-      });
-    }
-  }
-
-  function resize() {
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = vw;
-    H = vh;
-    canvas.width = Math.floor(vw * dpr);
-    canvas.height = Math.floor(vh * dpr);
-    canvas.style.width = vw + "px";
-    canvas.style.height = vh + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    layoutDecor();
-
-    var want = targetCount();
-    while (bubbles.length < want) spawnBubble();
-    while (bubbles.length > want && bubbles.length) {
-      var last = bubbles[bubbles.length - 1];
-      if (!last.dying) bubbles.pop();
-      else break;
-    }
-    var i, b;
-    for (i = 0; i < bubbles.length; i++) {
-      b = bubbles[i];
-      b.x = Math.max(b.r, Math.min(W - b.r, b.x));
-      b.y = Math.max(b.r, Math.min(H * 0.78, b.y));
-    }
-  }
-
-  function drawSky() {
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#3dbfff");
-    g.addColorStop(0.45, "#9ee8ff");
-    g.addColorStop(0.7, "#c8f7a0");
-    g.addColorStop(1, "#7ed957");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    var sunX = W * 0.86;
-    var sunY = H * 0.12;
-    var sunR = Math.min(W, H) * 0.09;
-    var rg = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, sunR * 1.8);
-    rg.addColorStop(0, "#fff6a0");
-    rg.addColorStop(0.45, "#ffe14a");
-    rg.addColorStop(1, "rgba(255,225,74,0)");
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ffe14a";
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff6c8";
-    ctx.beginPath();
-    ctx.arc(sunX - sunR * 0.25, sunY - sunR * 0.2, sunR * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-
-    var i, c;
-    for (i = 0; i < clouds.length; i++) {
-      c = clouds[i];
-      drawCloud(c.x, c.y, c.s);
-    }
-
-    ctx.fillStyle = "#5ec64a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.25, H * 0.7, W * 0.5, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.75, H * 0.86, W, H * 0.74);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#6ed85a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.86);
-    ctx.quadraticCurveTo(W * 0.4, H * 0.8, W, H * 0.88);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    for (i = 0; i < flowers.length; i++) {
-      drawFlower(flowers[i]);
-    }
-  }
-
-  function drawCloud(x, y, s) {
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.beginPath();
-    ctx.arc(x, y, 22 * s, 0, Math.PI * 2);
-    ctx.arc(x + 24 * s, y - 8 * s, 28 * s, 0, Math.PI * 2);
-    ctx.arc(x + 50 * s, y, 20 * s, 0, Math.PI * 2);
-    ctx.arc(x + 22 * s, y + 10 * s, 20 * s, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawFlower(f) {
-    var i, a;
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.scale(f.s, f.s);
-    ctx.strokeStyle = "#2f8a28";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 18);
-    ctx.stroke();
-    for (i = 0; i < 5; i++) {
-      a = (i / 5) * Math.PI * 2;
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * 8, Math.sin(a) * 8 - 6, 7, 0, Math.PI * 2);
-      ctx.fillStyle = f.color;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(0, -6, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffe14a";
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawBubble(b, time) {
-    var appear = Math.min(1, (time - b.born) * 3);
+  function drawBubble(b, t) {
+    var appear = Math.min(1, (t - b.born) * 3);
     var s = b.dying ? Math.max(0, 1 - b.dieT * 4) : (b.scale || appear);
     if (s <= 0.01) return;
-    if (!b.dying && time - lastInteractionTime > 6) {
-      s *= 1 + Math.sin(time * 4 + b.wobble) * 0.07;
+    if (!b.dying && t - lastInteractionTime > 6) {
+      s *= 1 + Math.sin(t * 4 + b.wobble) * 0.07;
     }
-    var wob = Math.sin(time * b.wobbleSpeed + b.wobble) * 0.04;
-    var r = b.r * s;
+    /* Visual radius wobble only — hit radius stays b.r */
+    var rPulse = 1 + Math.sin(t * b.wobbleSpeed * 1.4 + b.phase) * 0.035;
+    var wob = Math.sin(t * b.wobbleSpeed + b.wobble) * 0.045;
+    var r = b.r * s * rPulse;
+    var c = b.color;
 
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.scale(1 + wob, 1 - wob);
 
-    var g = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
-    g.addColorStop(0, b.color.shine);
-    g.addColorStop(0.35, b.color.rim);
-    g.addColorStop(1, b.color.body);
+    /* Soft glass fill */
+    var g = ctx.createRadialGradient(-r * 0.28, -r * 0.32, r * 0.05, 0, 0, r);
+    g.addColorStop(0, "rgba(255,255,255,0.55)");
+    g.addColorStop(0.28, c.body);
+    g.addColorStop(0.78, c.body);
+    g.addColorStop(1, "rgba(255,255,255,0.08)");
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fillStyle = g;
-    ctx.globalAlpha = 0.92;
     ctx.fill();
 
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = Math.max(3, r * 0.06);
+    /* Coloured refraction band low on the sphere */
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+    ctx.clip();
+    var band = ctx.createLinearGradient(-r * 0.6, r * 0.15, r * 0.6, r * 0.75);
+    band.addColorStop(0, "rgba(255,255,255,0)");
+    band.addColorStop(0.35, c.band);
+    band.addColorStop(0.55, "rgba(180,255,255,0.18)");
+    band.addColorStop(0.75, c.band);
+    band.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = band;
+    ctx.fillRect(-r, r * 0.05, r * 2, r * 0.7);
+    ctx.restore();
+
+    /* Rim: a faint white edge all the way round, then a whisper of colour on
+       the shaded lower arc. Strong colour here reads as a separate ring
+       floating next to the bubble rather than part of it. */
+    ctx.lineWidth = Math.max(2, r * 0.045);
+    ctx.strokeStyle = "rgba(255,255,255,0.32)";
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.97, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = Math.max(2, r * 0.05);
+    ctx.strokeStyle = c.rim;
+    ctx.globalAlpha = 0.38;
     ctx.beginPath();
-    ctx.ellipse(-r * 0.32, -r * 0.38, r * 0.22, r * 0.14, -0.5, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.arc(0, 0, r * 0.96, Math.PI * 0.08, Math.PI * 0.92);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    /* Large soft top-left highlight */
+    var hg = ctx.createRadialGradient(-r * 0.32, -r * 0.38, 0, -r * 0.32, -r * 0.38, r * 0.42);
+    hg.addColorStop(0, "rgba(255,255,255,0.95)");
+    hg.addColorStop(0.35, "rgba(255,255,255,0.45)");
+    hg.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = hg;
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.36, r * 0.34, r * 0.22, -0.55, 0, Math.PI * 2);
     ctx.fill();
 
+    /* Small secondary specular */
     ctx.beginPath();
-    ctx.ellipse(r * 0.28, r * 0.22, r * 0.1, r * 0.06, 0.4, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.arc(-r * 0.12, -r * 0.48, r * 0.07, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.fill();
+
+    /* Tiny lower glint */
+    ctx.beginPath();
+    ctx.ellipse(r * 0.3, r * 0.28, r * 0.09, r * 0.05, 0.45, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
     ctx.fill();
 
     ctx.restore();
@@ -387,18 +304,51 @@
     ctx.globalAlpha = Math.max(0, fade);
     ctx.fillStyle = p.color;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r * fade, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, p.r * (0.6 + 0.4 * fade), 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
   }
 
-  function update(dt, time) {
-    var i, b, a, p, want;
+  function drawRing(ring) {
+    var u = ring.t / ring.life;
+    var fade = 1 - u;
+    var rr = ring.r + (ring.maxR - ring.r) * u;
+    ctx.globalAlpha = Math.max(0, fade * 0.85);
+    ctx.strokeStyle = ring.color;
+    ctx.lineWidth = Math.max(2, 5 * (1 - u * 0.7));
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, rr, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
 
-    for (i = 0; i < clouds.length; i++) {
-      clouds[i].x += clouds[i].drift * dt;
-      if (clouds[i].x > W + 80) clouds[i].x = -80;
+  function updateAnimalSquash(a) {
+    /* Squash-and-stretch entrance: stretch tall, overshoot, settle */
+    var t = a.t;
+    if (t < 0.18) {
+      var u = t / 0.18;
+      a.scale = u * 1.22;
+      a.sx = 0.72 + 0.2 * u;
+      a.sy = 1.35 - 0.1 * u;
+    } else if (t < 0.34) {
+      var v = (t - 0.18) / 0.16;
+      a.scale = 1.22 - v * 0.14;
+      a.sx = 0.92 + v * 0.28;
+      a.sy = 1.25 - v * 0.35;
+    } else if (t < 0.5) {
+      var w = (t - 0.34) / 0.16;
+      a.scale = 1.08 - w * 0.08;
+      a.sx = 1.2 - w * 0.2;
+      a.sy = 0.9 + w * 0.1;
+    } else {
+      a.scale = 1;
+      a.sx = 1;
+      a.sy = 1;
     }
+  }
+
+  function update(dt, t) {
+    var i, b, a, p, ring, want;
 
     for (i = bubbles.length - 1; i >= 0; i--) {
       b = bubbles[i];
@@ -409,7 +359,7 @@
       }
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      b.y += Math.sin(time * b.wobbleSpeed + b.wobble) * 8 * dt;
+      b.y += Math.sin(t * b.wobbleSpeed + b.wobble) * 8 * dt;
       if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
       if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
       if (b.y < b.r + 8) { b.y = b.r + 8; b.vy = Math.abs(b.vy); }
@@ -427,9 +377,7 @@
       a.t += dt;
       a.x += a.vx * dt;
       a.y += a.vy * dt;
-      if (a.t < 0.25) a.scale = (a.t / 0.25) * 1.15;
-      else if (a.t < 0.4) a.scale = 1.15 - (a.t - 0.25) * 0.8;
-      else a.scale = 1;
+      updateAnimalSquash(a);
       if (a.t > a.life * 0.55) {
         a.vy -= 30 * dt;
         a.scale *= 0.995;
@@ -442,95 +390,72 @@
       p.t += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 220 * dt;
+      p.vy += 260 * dt;
       if (p.t > p.life) bursts.splice(i, 1);
     }
+
+    for (i = rings.length - 1; i >= 0; i--) {
+      ring = rings[i];
+      ring.t += dt;
+      if (ring.t > ring.life) rings.splice(i, 1);
+    }
   }
 
-  function render(time) {
-    drawSky();
-    var i;
+  function render(t) {
+    scene.draw(ctx);
+    var i, a, size, fade;
+    for (i = 0; i < rings.length; i++) drawRing(rings[i]);
     for (i = 0; i < bursts.length; i++) drawBurst(bursts[i]);
-    for (i = 0; i < bubbles.length; i++) drawBubble(bubbles[i], time);
+    for (i = 0; i < bubbles.length; i++) drawBubble(bubbles[i], t);
     for (i = 0; i < animals.length; i++) {
-      var a = animals[i];
-      var fade = a.t > a.life * 0.7 ? 1 - (a.t - a.life * 0.7) / (a.life * 0.3) : 1;
+      a = animals[i];
+      fade = a.t > a.life * 0.7 ? 1 - (a.t - a.life * 0.7) / (a.life * 0.3) : 1;
       ctx.globalAlpha = Math.max(0, fade);
-      var size = Math.min(W, H) * 0.09 * a.scale;
-      BubbleAnimals.draw(ctx, a.name, a.x, a.y, size / 40, a.t);
+      size = Math.min(W, H) * 0.09 * a.scale;
+      ctx.save();
+      ctx.translate(a.x, a.y);
+      ctx.scale(a.sx, a.sy);
+      GGAnimals.draw(ctx, a.name, 0, 0, size / 40, a.t);
+      ctx.restore();
       ctx.globalAlpha = 1;
     }
+    scene.drawParticles(ctx);
   }
 
-  var last = performance.now();
-  function frame(now) {
-    var dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    var time = now / 1000;
-    update(dt, time);
-    render(time);
-    requestAnimationFrame(frame);
-  }
+  GGShell.mount({
+    canvas: canvas,
+    ctx: ctx,
+    resize: function (w, h) {
+      W = w;
+      H = h;
+      scene.resize(w, h);
 
-  function eventPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src = e;
-    if (e.changedTouches && e.changedTouches[0]) src = e.changedTouches[0];
-    return {
-      x: (src.clientX - rect.left) * (W / rect.width),
-      y: (src.clientY - rect.top) * (H / rect.height)
-    };
-  }
-
-  function onTap(e) {
-    e.preventDefault();
-    var t = performance.now();
-    if (t - lastTap < 40) return;
-    lastTap = t;
-    if (window.BubbleAudio) BubbleAudio.unlock();
-    lastInteractionTime = performance.now() / 1000;
-    var p = eventPos(e);
-    var b = hitTest(p.x, p.y);
-    if (b) popBubble(b);
-    else spawnTapSparkle(p.x, p.y);
-  }
-
-  var muteBtn = document.getElementById("mute");
-  function syncMuteBtn() {
-    if (!muteBtn || !window.BubbleAudio) return;
-    var m = BubbleAudio.isMuted();
-    muteBtn.classList.toggle("muted", m);
-    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
-  }
-  if (muteBtn) {
-    muteBtn.addEventListener("click", function () {
-      if (window.BubbleAudio) {
-        BubbleAudio.unlock();
-        BubbleAudio.setMuted(!BubbleAudio.isMuted());
+      var want = targetCount();
+      while (bubbles.length < want) spawnBubble();
+      while (bubbles.length > want && bubbles.length) {
+        var last = bubbles[bubbles.length - 1];
+        if (!last.dying) bubbles.pop();
+        else break;
       }
-      syncMuteBtn();
-    });
-    syncMuteBtn();
-  }
-
-  if (window.PointerEvent) {
-    canvas.addEventListener("pointerdown", onTap, { passive: false });
-  } else {
-    canvas.addEventListener("touchstart", onTap, { passive: false });
-    canvas.addEventListener("mousedown", onTap);
-  }
-  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-  window.addEventListener("resize", resize);
-  window.addEventListener("orientationchange", function () {
-    setTimeout(resize, 200);
-  });
-
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && window.BubbleAudio && BubbleAudio.isUnlocked()) {
-      BubbleAudio.unlock();
+      var i, b;
+      for (i = 0; i < bubbles.length; i++) {
+        b = bubbles[i];
+        b.x = Math.max(b.r, Math.min(W - b.r, b.x));
+        b.y = Math.max(b.r, Math.min(H * 0.78, b.y));
+      }
+    },
+    start: function () {},
+    tap: function (x, y) {
+      lastInteractionTime = time;
+      var b = hitTest(x, y);
+      if (b) popBubble(b);
+      else spawnTapSparkle(x, y);
+    },
+    frame: function (dt, t) {
+      time = t;
+      scene.update(dt);
+      update(dt, t);
+      render(t);
     }
   });
-
-  resize();
-  requestAnimationFrame(frame);
 })();

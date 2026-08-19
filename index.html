@@ -11,9 +11,29 @@
   <title>Gabrelia's Games</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="css/hub.css">
+  <link rel="stylesheet" href="css/controls.css">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script>
+    try { if (sessionStorage.getItem("gg-welcomed") === "1") document.documentElement.classList.add("seen"); } catch (e) {}
+  </script>
 </head>
 <body>
+  <button class="mute-btn" id="mute" type="button" aria-pressed="false" aria-label="Turn sound off">
+    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+      <path fill="#c46a20" d="M4 9v6h4l5 4V5L8 9H4z"/>
+      <path class="wav" fill="none" stroke="#c46a20" stroke-width="2" stroke-linecap="round" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>
+      <line class="slash" x1="4" y1="4" x2="20" y2="20" stroke="#d04040" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <div class="welcome" id="welcome" role="button" tabindex="0" aria-label="Hi Gabrelia! Tap to play">
+    <span class="star s1" aria-hidden="true">✦</span>
+    <span class="star s2" aria-hidden="true">✦</span>
+    <span class="star s3" aria-hidden="true">✦</span>
+    <span class="star s4" aria-hidden="true">✦</span>
+    <p class="welcome-hi">Hi Gabrelia!</p>
+    <p class="welcome-tap">Tap to play</p>
+  </div>
   <main class="hub">
     <header class="hero">
       <h1>Gabrelia's Games</h1>
@@ -59,7 +79,54 @@
       <p>No ads &middot; No accounts &middot; Plays offline</p>
     </footer>
   </main>
+  <script src="js/audio.js"></script>
+  <script src="js/shell.js"></script>
   <script>
+    GGShell.wireControls();
+    (function () {
+      var gate = document.getElementById("welcome");
+
+      function start() {
+        GGAudio.unlock();
+        GGAudio.welcome();
+      }
+
+      function dismiss(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        start();
+        try { sessionStorage.setItem("gg-welcomed", "1"); } catch (err) {}
+        document.documentElement.classList.add("seen");
+        if (!gate) return;
+        gate.classList.add("go");
+        var el = gate;
+        gate = null;
+        setTimeout(function () {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }, 480);
+      }
+
+      if (document.documentElement.classList.contains("seen")) {
+        if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
+        gate = null;
+        document.addEventListener("pointerdown", function () { start(); }, true);
+      } else if (gate) {
+        gate.addEventListener("pointerdown", dismiss);
+        gate.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") dismiss(e);
+        });
+        try { gate.focus(); } catch (err) {}
+      }
+
+      var muteBtn = document.getElementById("mute");
+      if (muteBtn) {
+        muteBtn.addEventListener("click", function () {
+          if (!GGAudio.isMuted()) start();
+        });
+      }
+    })();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
         navigator.serviceWorker.register("sw.js").catch(function () {});

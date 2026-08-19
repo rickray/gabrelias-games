@@ -8,11 +8,7 @@
 
   var W = 800;
   var H = 600;
-  var dpr = 1;
-  var lastTap = 0;
-
-  var clouds = [];
-  var flowers = [];
+  var scene = GGScene.create({ ground: 0.78 });
 
   var PAIRS = [
     { animal: "monkey", food: "banana" },
@@ -27,14 +23,20 @@
     { animal: "cat", food: "milk" }
   ];
 
-  var TILE_COLORS = ["#fff6c8", "#ffe0f0", "#e0f4ff"];
+  var TILE_COLORS = [
+    { top: "#fffef0", mid: "#fff6c8", bot: "#f0d88a", rim: "#e0b050" },
+    { top: "#fff5fa", mid: "#ffe0f0", bot: "#f0b0d0", rim: "#e070b0" },
+    { top: "#f0faff", mid: "#e0f4ff", bot: "#a8d8f0", rim: "#60a8d0" }
+  ];
 
+  var tileFaceCache = {};
   var lastPair = "";
   var pair = null;
   var tiles = [];
   var animalAnim = { mode: "idle", t: 0 };
   var chompFood = null;
-  var sparkles = [];
+  var crumbs = [];
+  var puffs = [];
   var busy = false;
   var announced = false;
   var time = 0;
@@ -58,29 +60,6 @@
     return arr;
   }
 
-  function layoutDecor() {
-    clouds = [];
-    flowers = [];
-    var i, n = W > H ? 6 : 4;
-    for (i = 0; i < n; i++) {
-      clouds.push({
-        x: (i + 0.3) * (W / n) + rand(-30, 30),
-        y: rand(H * 0.06, H * 0.28),
-        s: rand(0.7, 1.3),
-        drift: rand(4, 12)
-      });
-    }
-    n = W > H ? 10 : 7;
-    for (i = 0; i < n; i++) {
-      flowers.push({
-        x: (i + 0.4) * (W / n) + rand(-16, 16),
-        y: rand(H * 0.82, H * 0.96),
-        color: pick(["#ff4d9a", "#ff8a1a", "#ffe14a", "#ff5ad5", "#7a5cff"]),
-        s: rand(0.8, 1.3)
-      });
-    }
-  }
-
   function tileLayout() {
     var n = 3;
     var gap = Math.min(22, W * 0.03);
@@ -98,6 +77,11 @@
     };
   }
 
+  function mouthPos() {
+    var ap = animalPos();
+    return { x: ap.x, y: ap.y + 18 };
+  }
+
   function nextRound() {
     var choice = pick(PAIRS);
     var guard = 0;
@@ -109,9 +93,11 @@
     pair = choice;
     animalAnim = { mode: "idle", t: 0 };
     chompFood = null;
+    crumbs = [];
+    puffs = [];
     busy = false;
     announced = false;
-    if (window.SnackAudio && SnackAudio.isUnlocked()) announce(1200);
+    if (GGAudio.isUnlocked()) announce(1200);
 
     var others = PAIRS.filter(function (p) { return p.food !== choice.food; });
     shuffle(others);
@@ -144,153 +130,6 @@
     }
   }
 
-  function resize() {
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = vw;
-    H = vh;
-    canvas.width = Math.floor(vw * dpr);
-    canvas.height = Math.floor(vh * dpr);
-    canvas.style.width = vw + "px";
-    canvas.style.height = vh + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    layoutDecor();
-    if (tiles.length) relayoutTiles();
-  }
-
-  function drawSky() {
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#3dbfff");
-    g.addColorStop(0.45, "#9ee8ff");
-    g.addColorStop(0.7, "#c8f7a0");
-    g.addColorStop(1, "#7ed957");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    var sunX = W * 0.86;
-    var sunY = H * 0.12;
-    var sunR = Math.min(W, H) * 0.09;
-    var rg = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, sunR * 1.8);
-    rg.addColorStop(0, "#fff6a0");
-    rg.addColorStop(0.45, "#ffe14a");
-    rg.addColorStop(1, "rgba(255,225,74,0)");
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ffe14a";
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff6c8";
-    ctx.beginPath();
-    ctx.arc(sunX - sunR * 0.25, sunY - sunR * 0.2, sunR * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-
-    var i, c;
-    for (i = 0; i < clouds.length; i++) {
-      c = clouds[i];
-      drawCloud(c.x, c.y, c.s);
-    }
-
-    ctx.fillStyle = "#5ec64a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.25, H * 0.7, W * 0.5, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.75, H * 0.86, W, H * 0.74);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#6ed85a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.86);
-    ctx.quadraticCurveTo(W * 0.4, H * 0.8, W, H * 0.88);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    for (i = 0; i < flowers.length; i++) {
-      drawFlower(flowers[i]);
-    }
-  }
-
-  function drawCloud(x, y, s) {
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.beginPath();
-    ctx.arc(x, y, 22 * s, 0, Math.PI * 2);
-    ctx.arc(x + 24 * s, y - 8 * s, 28 * s, 0, Math.PI * 2);
-    ctx.arc(x + 50 * s, y, 20 * s, 0, Math.PI * 2);
-    ctx.arc(x + 22 * s, y + 10 * s, 20 * s, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawFlower(f) {
-    var i, a;
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.scale(f.s, f.s);
-    ctx.strokeStyle = "#2f8a28";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 18);
-    ctx.stroke();
-    for (i = 0; i < 5; i++) {
-      a = (i / 5) * Math.PI * 2;
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * 8, Math.sin(a) * 8 - 6, 7, 0, Math.PI * 2);
-      ctx.fillStyle = f.color;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(0, -6, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffe14a";
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function spawnSparkle(x, y) {
-    var i;
-    for (i = 0; i < 14; i++) {
-      var a = (i / 14) * Math.PI * 2;
-      sparkles.push({
-        x: x,
-        y: y,
-        vx: Math.cos(a) * rand(60, 180),
-        vy: Math.sin(a) * rand(60, 180) - 40,
-        r: rand(4, 8),
-        color: pick(["#fff6a0", "#ffe14a", "#ff8ad8", "#fff"]),
-        life: rand(0.4, 0.7),
-        t: 0
-      });
-    }
-  }
-
-  function drawTile(tile) {
-    if (tile.hide >= 1) return;
-    var s = tile.size * (1 - tile.hide * 0.4) * (1 - tile.press * 0.06);
-    var x = tile.x + Math.sin(tile.bounce * 18) * tile.bounce * 16;
-    var y = tile.y - Math.abs(Math.sin(tile.bounce * 12)) * tile.bounce * 10;
-    var r = s * 0.22;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = "rgba(80, 40, 10, 0.12)";
-    roundRect(-s / 2 + 4, -s / 2 + 8, s, s, r);
-    ctx.fill();
-    ctx.fillStyle = TILE_COLORS[tiles.indexOf(tile) % 3];
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 6;
-    roundRect(-s / 2, -s / 2, s, s, r);
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-    SnackFoods.draw(ctx, tile.food, x, y, s / 90);
-  }
-
   function roundRect(x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -301,24 +140,148 @@
     ctx.closePath();
   }
 
+  function tileFaceGrad(idx, s) {
+    var key = idx + ":" + ((s / 4) | 0);
+    var g = tileFaceCache[key];
+    if (g) return g;
+    var c = TILE_COLORS[idx % 3];
+    g = ctx.createLinearGradient(0, -s / 2, 0, s / 2);
+    g.addColorStop(0, c.top);
+    g.addColorStop(0.45, c.mid);
+    g.addColorStop(1, c.bot);
+    tileFaceCache[key] = g;
+    return g;
+  }
+
+  function spawnCrumbs(x, y) {
+    var i, a;
+    for (i = 0; i < 12; i++) {
+      a = (i / 12) * Math.PI * 2 + rand(-0.2, 0.2);
+      crumbs.push({
+        x: x,
+        y: y,
+        vx: Math.cos(a) * rand(40, 140),
+        vy: Math.sin(a) * rand(20, 100) - 80,
+        r: rand(2.5, 5.5),
+        color: pick(["#fff6a0", "#e0a060", "#ffd24a", "#c48a48", "#fff"]),
+        life: rand(0.45, 0.8),
+        t: 0,
+        rot: rand(0, Math.PI * 2),
+        spin: rand(-8, 8)
+      });
+    }
+  }
+
+  function spawnPuff(x, y) {
+    var i, a;
+    for (i = 0; i < 6; i++) {
+      a = (i / 6) * Math.PI * 2;
+      puffs.push({
+        x: x + Math.cos(a) * 6,
+        y: y + Math.sin(a) * 4,
+        vx: Math.cos(a) * rand(20, 50),
+        vy: Math.sin(a) * rand(10, 40) - 20,
+        r: rand(6, 12),
+        life: rand(0.28, 0.45),
+        t: 0
+      });
+    }
+  }
+
+  function drawTile(tile, idx) {
+    if (tile.hide >= 1) return;
+    var press = tile.press;
+    var s = tile.size * (1 - tile.hide * 0.4) * (1 - press * 0.08);
+    var x = tile.x + Math.sin(tile.bounce * 18) * tile.bounce * 16;
+    var y = tile.y - Math.abs(Math.sin(tile.bounce * 12)) * tile.bounce * 10 + press * 5;
+    var r = s * 0.22;
+    var c = TILE_COLORS[idx % 3];
+    var sh, face;
+    ctx.save();
+    ctx.translate(x, y);
+
+    sh = ctx.createRadialGradient(0, s * 0.42, 2, 4, s * 0.48, s * 0.55);
+    sh.addColorStop(0, "rgba(60,30,8,0.28)");
+    sh.addColorStop(1, "rgba(60,30,8,0)");
+    ctx.fillStyle = sh;
+    ctx.beginPath();
+    ctx.ellipse(4, s * 0.48, s * 0.48, s * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    face = tileFaceGrad(idx, s);
+    roundRect(-s / 2, -s / 2, s, s, r);
+    ctx.fillStyle = face;
+    ctx.fill();
+    ctx.strokeStyle = c.rim;
+    ctx.lineWidth = Math.max(3, s * 0.045);
+    ctx.stroke();
+    /* A fade across the top, not a closed inner rounded-rect — that
+       read as a circle sitting on the tile. */
+    ctx.save();
+    roundRect(-s / 2, -s / 2, s, s, r);
+    ctx.clip();
+    var sheen = ctx.createLinearGradient(0, -s / 2, 0, 0);
+    sheen.addColorStop(0, "rgba(255,255,255,0.5)");
+    sheen.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(-s / 2, -s / 2, s, s * 0.5);
+    ctx.restore();
+
+    ctx.restore();
+    SnackFoods.draw(ctx, tile.food, x, y + press * 2, s / 90);
+  }
+
   function drawThought(ax, ay, size) {
+    var bob = Math.sin(time * 2.2) * size * 0.04;
     var br = size * 0.62;
     var bx = ax + size * 1.08;
-    var by = ay - size * 1.18 + Math.sin(time * 2) * size * 0.05;
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.beginPath();
-    ctx.arc(ax + size * 0.42, ay - size * 0.5, size * 0.09, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(ax + size * 0.68, ay - size * 0.8, size * 0.13, 0, Math.PI * 2);
-    ctx.fill();
+    var by = ay - size * 1.18 + bob;
+    var t0x = ax + size * 0.38;
+    var t0y = ay - size * 0.42;
+    var t1x = ax + size * 0.58;
+    var t1y = ay - size * 0.68 + bob * 0.5;
+    var t2x = ax + size * 0.78;
+    var t2y = ay - size * 0.92 + bob * 0.75;
+    var g, i, tx, ty, tr, dots;
+
+    dots = [
+      { x: t0x, y: t0y, r: size * 0.07 },
+      { x: t1x, y: t1y, r: size * 0.11 },
+      { x: t2x, y: t2y, r: size * 0.15 }
+    ];
+    for (i = 0; i < dots.length; i++) {
+      tx = dots[i].x;
+      ty = dots[i].y;
+      tr = dots[i].r;
+      g = ctx.createRadialGradient(tx - tr * 0.3, ty - tr * 0.3, 1, tx, ty, tr);
+      g.addColorStop(0, "#ffffff");
+      g.addColorStop(1, "#fff0c8");
+      ctx.beginPath();
+      ctx.arc(tx, ty, tr, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = "#e0a830";
+      ctx.lineWidth = Math.max(1.5, size * 0.025);
+      ctx.stroke();
+    }
+
+    g = ctx.createRadialGradient(bx - br * 0.25, by - br * 0.3, br * 0.1, bx, by, br);
+    g.addColorStop(0, "#ffffff");
+    g.addColorStop(0.7, "#fff8e0");
+    g.addColorStop(1, "#ffe8a8");
     ctx.beginPath();
     ctx.arc(bx, by, br, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.strokeStyle = "#ffd24a";
-    ctx.lineWidth = Math.max(3, size * 0.05);
+    ctx.strokeStyle = "#e0a830";
+    ctx.lineWidth = Math.max(3, size * 0.055);
     ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,0.7)";
+    ctx.lineWidth = Math.max(1.5, size * 0.025);
+    ctx.beginPath();
+    ctx.arc(bx, by, br - Math.max(3, size * 0.04), 0, Math.PI * 2);
+    ctx.stroke();
+
     SnackFoods.draw(ctx, pair.food, bx, by, br / 36);
   }
 
@@ -344,11 +307,13 @@
     return dx * dx + dy * dy < r * r;
   }
 
-  function announce(delay) {
-    if (!window.SnackAudio || !pair) return;
-    SnackAudio.speak(
+  function announce(delay, interrupt) {
+    if (!pair) return;
+    var opts = { delay: delay || 0 };
+    if (interrupt === false) opts.interrupt = false;
+    GGAudio.say(
       "The " + pair.animal + " wants " + SnackFoods.wantPhrase(pair.food),
-      delay || 0
+      opts
     );
   }
 
@@ -356,38 +321,34 @@
     busy = true;
     animalAnim = { mode: "chomp", t: 0 };
     tile.hide = 0.01;
-    var ap = animalPos();
+    var mouth = mouthPos();
     chompFood = {
       food: tile.food,
       x: tile.x,
       y: tile.y,
-      tx: ap.x,
-      ty: ap.y + 18,
-      t: 0
+      tx: mouth.x,
+      ty: mouth.y,
+      t: 0,
+      landed: false
     };
-    spawnSparkle(tile.x, tile.y);
-    if (window.SnackAudio) {
-      SnackAudio.yum();
-      SnackAudio.speak("Yum!");
-    }
+    scene.sparkle(tile.x, tile.y);
+    GGAudio.yum();
+    GGAudio.say("Yum!");
   }
 
   function onWrong(tile) {
     tile.bounce = 1;
     animalAnim = { mode: "wiggle", t: 0 };
-    if (window.SnackAudio) {
-      SnackAudio.bounce();
-      SnackAudio.speak(SnackFoods.sayWrong(tile.food));
-      announce(1500);
-    }
+    spawnPuff(tile.x, tile.y - tile.size * 0.1);
+    GGAudio.bounce();
+    GGAudio.say(SnackFoods.sayWrong(tile.food));
+    announce(1500, false);
   }
 
   function update(dt) {
-    var i, p, t;
-    for (i = 0; i < clouds.length; i++) {
-      clouds[i].x += clouds[i].drift * dt;
-      if (clouds[i].x > W + 80) clouds[i].x = -80;
-    }
+    var i, p, t, k;
+    scene.update(dt);
+
     for (i = tiles.length - 1; i >= 0; i--) {
       t = tiles[i];
       if (t.bounce > 0) t.bounce = Math.max(0, t.bounce - dt * 1.6);
@@ -400,141 +361,145 @@
     }
     if (chompFood) {
       chompFood.t += dt;
-      var k = Math.min(1, chompFood.t / 0.38);
+      k = Math.min(1, chompFood.t / 0.38);
       k = k * (2 - k);
       chompFood.cx = chompFood.x + (chompFood.tx - chompFood.x) * k;
       chompFood.cy = chompFood.y + (chompFood.ty - chompFood.y) * k - Math.sin(k * Math.PI) * 70;
+      if (!chompFood.landed && chompFood.t >= 0.38) {
+        chompFood.landed = true;
+        scene.confetti(chompFood.tx, chompFood.ty);
+        spawnCrumbs(chompFood.tx, chompFood.ty);
+      }
       if (chompFood.t > 1.55) {
         chompFood = null;
         nextRound();
       }
     }
-    for (i = sparkles.length - 1; i >= 0; i--) {
-      p = sparkles[i];
+    for (i = crumbs.length - 1; i >= 0; i--) {
+      p = crumbs[i];
       p.t += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 180 * dt;
-      if (p.t > p.life) sparkles.splice(i, 1);
+      p.vy += 220 * dt;
+      p.rot += p.spin * dt;
+      if (p.t > p.life) crumbs.splice(i, 1);
+    }
+    for (i = puffs.length - 1; i >= 0; i--) {
+      p = puffs[i];
+      p.t += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.r += 18 * dt;
+      if (p.t > p.life) puffs.splice(i, 1);
     }
   }
 
-  function render() {
-    drawSky();
+  function drawAnimal() {
     var ap = animalPos();
     var size = Math.min(W, H) * (H > W ? 0.16 : 0.14);
     var tAnim = time * 0.18;
-    var extra = 1;
+    var sx = 1;
+    var sy = 1;
+    var chompK;
     if (animalAnim.mode === "wiggle") tAnim = animalAnim.t * 4;
     if (animalAnim.mode === "chomp") {
-      extra = 1 + Math.sin(Math.min(1, animalAnim.t / 0.25) * Math.PI) * 0.18;
+      chompK = Math.min(1, animalAnim.t / 0.45);
+      /* squash on bite, stretch back */
+      sx = 1 + Math.sin(chompK * Math.PI) * 0.22;
+      sy = 1 - Math.sin(chompK * Math.PI) * 0.16 + Math.sin(Math.min(1, animalAnim.t / 0.25) * Math.PI) * 0.06;
       tAnim = animalAnim.t * 3;
     }
-    BubbleAnimals.draw(ctx, pair.animal, ap.x, ap.y, (size / 40) * extra, tAnim);
+    ctx.save();
+    ctx.translate(ap.x, ap.y);
+    ctx.scale(sx, sy);
+    GGAnimals.draw(ctx, pair.animal, 0, 0, size / 40, tAnim);
+    ctx.restore();
     if (animalAnim.mode !== "chomp") drawThought(ap.x, ap.y, size);
+  }
 
-    var i, p;
-    if (chompFood && chompFood.t < 0.5) {
-      SnackFoods.draw(ctx, chompFood.food, chompFood.cx, chompFood.cy, (tileLayout().size / 90) * (1 - chompFood.t));
+  function render() {
+    var i, p, a;
+    scene.draw(ctx);
+    if (!pair) {
+      scene.drawParticles(ctx);
+      return;
     }
-    for (i = 0; i < tiles.length; i++) drawTile(tiles[i]);
-    for (i = 0; i < sparkles.length; i++) {
-      p = sparkles[i];
-      ctx.globalAlpha = Math.max(0, 1 - p.t / p.life);
+    drawAnimal();
+
+    if (chompFood && chompFood.t < 0.5) {
+      SnackFoods.draw(
+        ctx,
+        chompFood.food,
+        chompFood.cx,
+        chompFood.cy,
+        (tileLayout().size / 90) * (1 - chompFood.t)
+      );
+    }
+    for (i = 0; i < tiles.length; i++) drawTile(tiles[i], i);
+
+    for (i = 0; i < crumbs.length; i++) {
+      p = crumbs[i];
+      a = Math.max(0, 1 - p.t / p.life);
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
       ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r, -p.r * 0.6, p.r * 2, p.r * 1.2);
+      ctx.restore();
+    }
+    for (i = 0; i < puffs.length; i++) {
+      p = puffs[i];
+      a = Math.max(0, 0.55 * (1 - p.t / p.life));
+      ctx.globalAlpha = a;
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = 1;
+
+    scene.drawParticles(ctx);
   }
 
-  var last = performance.now();
-  function frame(now) {
-    var dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    time = now / 1000;
-    update(dt);
-    render();
-    requestAnimationFrame(frame);
-  }
-
-  function eventPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src = e;
-    if (e.changedTouches && e.changedTouches[0]) src = e.changedTouches[0];
-    return {
-      x: (src.clientX - rect.left) * (W / rect.width),
-      y: (src.clientY - rect.top) * (H / rect.height)
-    };
-  }
-
-  function onTap(e) {
-    e.preventDefault();
-    var t = performance.now();
-    if (t - lastTap < 40) return;
-    lastTap = t;
-    if (window.SnackAudio) SnackAudio.unlock();
-    if (busy) return;
-    var p = eventPos(e);
-    var tile = hitTile(p.x, p.y);
-    var first = !announced;
-    announced = true;
-    if (!tile) {
-      if (first) {
-        announce(0);
+  GGShell.mount({
+    canvas: canvas,
+    ctx: ctx,
+    resize: function (w, h) {
+      W = w;
+      H = h;
+      tileFaceCache = {};
+      scene.resize(w, h);
+      if (tiles.length) relayoutTiles();
+    },
+    start: function () {
+      nextRound();
+    },
+    tap: function (x, y) {
+      if (busy) return;
+      var tile = hitTile(x, y);
+      var first = !announced;
+      announced = true;
+      if (!tile) {
+        if (first) {
+          announce(0);
+          return;
+        }
+        if (hitAnimal(x, y)) {
+          animalAnim = { mode: "wiggle", t: 0 };
+          GGAudio.bounce();
+          GGAudio.say("I'm the " + pair.animal + "!");
+        }
         return;
       }
-      if (hitAnimal(p.x, p.y)) {
-        animalAnim = { mode: "wiggle", t: 0 };
-        if (window.SnackAudio) {
-          SnackAudio.bounce();
-          SnackAudio.speak("I'm the " + pair.animal + "!");
-        }
-      }
-      return;
-    }
-    tile.press = 1;
-    if (tile.correct) onCorrect(tile);
-    else onWrong(tile);
-  }
-
-  var muteBtn = document.getElementById("mute");
-  function syncMuteBtn() {
-    if (!muteBtn || !window.SnackAudio) return;
-    var m = SnackAudio.isMuted();
-    muteBtn.classList.toggle("muted", m);
-    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
-  }
-  if (muteBtn) {
-    muteBtn.addEventListener("click", function () {
-      if (window.SnackAudio) {
-        SnackAudio.unlock();
-        SnackAudio.setMuted(!SnackAudio.isMuted());
-      }
-      syncMuteBtn();
-    });
-    syncMuteBtn();
-  }
-
-  if (window.PointerEvent) {
-    canvas.addEventListener("pointerdown", onTap, { passive: false });
-  } else {
-    canvas.addEventListener("touchstart", onTap, { passive: false });
-    canvas.addEventListener("mousedown", onTap);
-  }
-  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-  window.addEventListener("resize", resize);
-  window.addEventListener("orientationchange", function () {
-    setTimeout(resize, 200);
-  });
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && window.SnackAudio && SnackAudio.isUnlocked()) {
-      SnackAudio.unlock();
+      tile.press = 1;
+      if (tile.correct) onCorrect(tile);
+      else onWrong(tile);
+    },
+    frame: function (dt, t) {
+      time = t;
+      update(dt);
+      render();
     }
   });
-
-  resize();
-  nextRound();
-  requestAnimationFrame(frame);
 })();

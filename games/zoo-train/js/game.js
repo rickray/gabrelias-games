@@ -8,16 +8,21 @@
 
   var W = 800;
   var H = 600;
-  var dpr = 1;
-  var lastTap = 0;
   var time = 0;
+  var scene = GGScene.create({ ground: 0.78 });
 
-  var clouds = [];
-  var flowers = [];
   var puffs = [];
+  var dust = [];
   var puffTimer = 0;
+  var departBurst = false;
 
-  var CAR_COLORS = ["#ff6a6a", "#ffd24a", "#7a6bff"];
+  var CAR_COLORS = [
+    { top: "#ff9a9a", mid: "#ff6a6a", bot: "#d03040", rim: "#8a1020" },
+    { top: "#ffe68a", mid: "#ffd24a", bot: "#d0a010", rim: "#8a6a08" },
+    { top: "#a89aff", mid: "#7a6bff", bot: "#4030c0", rim: "#201080" }
+  ];
+  var ENGINE = { top: "#ff8a90", mid: "#ff4d5a", bot: "#c02030", rim: "#7a1018" };
+
   var trainX = 0;
   var trainMode = "idle";
   var trainT = 0;
@@ -27,6 +32,7 @@
   var busy = false;
   var lastPicks = [];
   var lastInteractionTime = 0;
+  var gradCache = {};
 
   function rand(a, b) {
     return a + Math.random() * (b - a);
@@ -45,29 +51,6 @@
       arr[j] = t;
     }
     return arr;
-  }
-
-  function layoutDecor() {
-    clouds = [];
-    flowers = [];
-    var i, n = W > H ? 6 : 4;
-    for (i = 0; i < n; i++) {
-      clouds.push({
-        x: (i + 0.3) * (W / n) + rand(-30, 30),
-        y: rand(H * 0.06, H * 0.26),
-        s: rand(0.7, 1.3),
-        drift: rand(4, 12)
-      });
-    }
-    n = W > H ? 10 : 7;
-    for (i = 0; i < n; i++) {
-      flowers.push({
-        x: (i + 0.4) * (W / n) + rand(-16, 16),
-        y: rand(H * 0.88, H * 0.97),
-        color: pick(["#ff4d9a", "#ff8a1a", "#ffe14a", "#ff5ad5", "#7a5cff"]),
-        s: rand(0.8, 1.3)
-      });
-    }
   }
 
   function metrics() {
@@ -120,7 +103,7 @@
   }
 
   function fillPlatform() {
-    var names = BubbleAnimals.names.slice();
+    var names = GGAnimals.names.slice();
     shuffle(names);
     var chosen = [];
     var i, name;
@@ -145,126 +128,20 @@
     cars = [null, null, null];
     hop = null;
     busy = false;
+    departBurst = false;
+    puffs = [];
+    dust = [];
   }
 
   function nextSet(fromLeft) {
     resetTrain(!!fromLeft);
+    if (fromLeft) GGAudio.whoosh();
     fillPlatform();
   }
 
   function parkedX() {
     var m = metrics();
     return (W - m.trainW) / 2;
-  }
-
-  function resize() {
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = vw;
-    H = vh;
-    canvas.width = Math.floor(vw * dpr);
-    canvas.height = Math.floor(vh * dpr);
-    canvas.style.width = vw + "px";
-    canvas.style.height = vh + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    layoutDecor();
-    if (trainMode === "idle") trainX = parkedX();
-    layoutPlatform();
-  }
-
-  function drawSky() {
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#3dbfff");
-    g.addColorStop(0.45, "#9ee8ff");
-    g.addColorStop(0.7, "#c8f7a0");
-    g.addColorStop(1, "#7ed957");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    var sunX = W * 0.86;
-    var sunY = H * 0.12;
-    var sunR = Math.min(W, H) * 0.09;
-    var rg = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, sunR * 1.8);
-    rg.addColorStop(0, "#fff6a0");
-    rg.addColorStop(0.45, "#ffe14a");
-    rg.addColorStop(1, "rgba(255,225,74,0)");
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ffe14a";
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff6c8";
-    ctx.beginPath();
-    ctx.arc(sunX - sunR * 0.25, sunY - sunR * 0.2, sunR * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-
-    var i, c;
-    for (i = 0; i < clouds.length; i++) {
-      c = clouds[i];
-      drawCloud(c.x, c.y, c.s);
-    }
-
-    ctx.fillStyle = "#5ec64a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.25, H * 0.7, W * 0.5, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.75, H * 0.86, W, H * 0.74);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#6ed85a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.86);
-    ctx.quadraticCurveTo(W * 0.4, H * 0.8, W, H * 0.88);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    for (i = 0; i < flowers.length; i++) {
-      drawFlower(flowers[i]);
-    }
-  }
-
-  function drawCloud(x, y, s) {
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.beginPath();
-    ctx.arc(x, y, 22 * s, 0, Math.PI * 2);
-    ctx.arc(x + 24 * s, y - 8 * s, 28 * s, 0, Math.PI * 2);
-    ctx.arc(x + 50 * s, y, 20 * s, 0, Math.PI * 2);
-    ctx.arc(x + 22 * s, y + 10 * s, 20 * s, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawFlower(f) {
-    var i, a;
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.scale(f.s, f.s);
-    ctx.strokeStyle = "#2f8a28";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 18);
-    ctx.stroke();
-    for (i = 0; i < 5; i++) {
-      a = (i / 5) * Math.PI * 2;
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * 8, Math.sin(a) * 8 - 6, 7, 0, Math.PI * 2);
-      ctx.fillStyle = f.color;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(0, -6, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffe14a";
-    ctx.fill();
-    ctx.restore();
   }
 
   function roundRect(x, y, w, h, r) {
@@ -277,29 +154,114 @@
     ctx.closePath();
   }
 
-  function drawTracks(m) {
-    var y = m.trackY + m.carH * 0.42;
-    ctx.fillStyle = "#8a5a2a";
-    var i, x;
-    for (x = -20; x < W + 20; x += 28) {
-      ctx.fillRect(x, y - 6, 18, 22);
-    }
-    ctx.fillStyle = "#6a6a70";
-    ctx.fillRect(0, y - 2, W, 5);
-    ctx.fillRect(0, y + 10, W, 5);
-    ctx.fillStyle = "#c0c4c8";
-    ctx.fillRect(0, y - 3, W, 2);
-    ctx.fillRect(0, y + 9, W, 2);
+  function bodyGrad(key, x, y, w, h, palette) {
+    var ck = key + ":" + ((w / 4) | 0) + ":" + ((h / 4) | 0);
+    var g = gradCache[ck];
+    if (g) return g;
+    g = ctx.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, palette.top);
+    g.addColorStop(0.45, palette.mid);
+    g.addColorStop(1, palette.bot);
+    gradCache[ck] = g;
+    return g;
   }
 
-  function drawWheel(x, y, r) {
+  function drawTracks(m) {
+    var y = m.trackY + m.carH * 0.42;
+    var i, x, g, bed;
+    /* Gravel bed. Kept shallow and warm: a wide grey slab across the whole
+       screen fights the animals for attention. */
+    bed = ctx.createLinearGradient(0, y - 10, 0, y + 22);
+    bed.addColorStop(0, "#cbae7e");
+    bed.addColorStop(1, "#a4834f");
+    ctx.fillStyle = bed;
+    ctx.fillRect(0, y - 8, W, 30);
+
+    /* Sleepers, spaced far enough apart to read as separate. */
+    for (x = -20; x < W + 20; x += 36) {
+      g = ctx.createLinearGradient(x, y - 6, x, y + 18);
+      g.addColorStop(0, "#c48a48");
+      g.addColorStop(0.55, "#8a5a2a");
+      g.addColorStop(1, "#5a3818");
+      ctx.fillStyle = g;
+      roundRect(x, y - 5, 15, 23, 3);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,220,160,0.35)";
+      ctx.fillRect(x + 2, y - 3, 11, 2.5);
+    }
+
+    /* Two thin rails: dark web, lit head, one bright specular line. */
+    for (i = 0; i < 2; i++) {
+      var ry = y + i * 12;
+      ctx.fillStyle = "#4a4a52";
+      ctx.fillRect(0, ry + 1, W, 3.5);
+      ctx.fillStyle = "#9298a0";
+      ctx.fillRect(0, ry - 2, W, 3.5);
+      ctx.fillStyle = "#e2e6ea";
+      ctx.fillRect(0, ry - 2.5, W, 1.5);
+    }
+  }
+
+  function drawWheel(x, y, r, spin) {
+    var i, a, hub;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = "#2a2a30";
+    ctx.fillStyle = "#1a1a22";
+    ctx.fill();
+    ctx.strokeStyle = "#0a0a10";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.78, 0, Math.PI * 2);
+    ctx.fillStyle = "#3a3a44";
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(spin || 0);
+    ctx.strokeStyle = "#c0c4c8";
+    ctx.lineWidth = Math.max(1.5, r * 0.12);
+    ctx.lineCap = "round";
+    for (i = 0; i < 6; i++) {
+      a = (i / 6) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r * 0.18, Math.sin(a) * r * 0.18);
+      ctx.lineTo(Math.cos(a) * r * 0.68, Math.sin(a) * r * 0.68);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    hub = ctx.createRadialGradient(x - r * 0.15, y - r * 0.15, 1, x, y, r * 0.42);
+    hub.addColorStop(0, "#f0f2f4");
+    hub.addColorStop(0.55, "#a0a4a8");
+    hub.addColorStop(1, "#606468");
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = hub;
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
-    ctx.fillStyle = "#c0c4c8";
+    ctx.arc(x, y, r * 0.14, 0, Math.PI * 2);
+    ctx.fillStyle = "#2a2a30";
+    ctx.fill();
+  }
+
+  function drawCoupler(x, y) {
+    ctx.fillStyle = "#4a4a50";
+    roundRect(x - 4, y - 5, 8, 10, 2);
+    ctx.fill();
+    ctx.fillStyle = "#2a2a30";
+    ctx.fillRect(x - 2, y - 3, 4, 6);
+  }
+
+  function trainShadow(m, x, w) {
+    var y = m.trackY + m.carH * 0.4;
+    var g = ctx.createRadialGradient(x + w * 0.5, y, 4, x + w * 0.5, y, w * 0.55);
+    g.addColorStop(0, "rgba(30,20,10,0.28)");
+    g.addColorStop(1, "rgba(30,20,10,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.5, y + 4, w * 0.52, 10, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -307,63 +269,176 @@
     var y = m.trackY;
     var w = m.engineW;
     var h = m.carH;
-    ctx.fillStyle = "#ff4d5a";
+    var spin = trainMode === "depart" || trainMode === "arrive" ? time * 10 : time * 0.6;
+    var g, cabX, cabW;
+
+    trainShadow(m, x, w);
+
+    /* boiler body */
+    g = bodyGrad("eng", x, y - h, w, h, ENGINE);
     roundRect(x, y - h, w, h, 14);
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 4;
-    roundRect(x, y - h, w, h, 14);
+    ctx.strokeStyle = ENGINE.rim;
+    ctx.lineWidth = 3.5;
     ctx.stroke();
-    ctx.fillStyle = "#8ae0ff";
-    roundRect(x + w * 0.18, y - h * 0.78, w * 0.38, h * 0.36, 8);
+
+    /* side panel highlight */
+    ctx.fillStyle = "rgba(255,255,255,0.22)";
+    roundRect(x + 8, y - h + 8, w * 0.55, h * 0.28, 8);
     ctx.fill();
-    ctx.fillStyle = "#4a4a50";
-    ctx.fillRect(x + w * 0.68, y - h * 1.18, w * 0.16, h * 0.28);
+
+    /* cabin */
+    cabX = x + w * 0.08;
+    cabW = w * 0.48;
+    g = ctx.createLinearGradient(cabX, y - h * 0.95, cabX, y - h * 0.35);
+    g.addColorStop(0, "#ffb0b4");
+    g.addColorStop(1, "#d02838");
+    roundRect(cabX, y - h * 0.95, cabW, h * 0.58, 10);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = ENGINE.rim;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    /* window with glass shine */
+    g = ctx.createLinearGradient(cabX + cabW * 0.12, y - h * 0.88, cabX + cabW * 0.12, y - h * 0.5);
+    g.addColorStop(0, "#e8f8ff");
+    g.addColorStop(0.4, "#7ad0ff");
+    g.addColorStop(1, "#2a80c0");
+    roundRect(cabX + cabW * 0.14, y - h * 0.86, cabW * 0.72, h * 0.34, 7);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "#104060";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    roundRect(cabX + cabW * 0.2, y - h * 0.84, cabW * 0.22, h * 0.14, 4);
+    ctx.fill();
+
+    /* chunky funnel */
+    g = ctx.createLinearGradient(x + w * 0.66, y - h * 1.3, x + w * 0.66, y - h * 0.85);
+    g.addColorStop(0, "#5a5a64");
+    g.addColorStop(1, "#2a2a32");
+    roundRect(x + w * 0.66, y - h * 1.22, w * 0.18, h * 0.34, 4);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "#1a1a22";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    /* funnel lip */
+    g = ctx.createLinearGradient(x + w * 0.63, y - h * 1.32, x + w * 0.63, y - h * 1.18);
+    g.addColorStop(0, "#7a7a84");
+    g.addColorStop(1, "#3a3a44");
+    roundRect(x + w * 0.63, y - h * 1.3, w * 0.24, h * 0.12, 5);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "#1a1a22";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* headlamp */
+    g = ctx.createRadialGradient(x + w * 0.88 - 2, y - h * 0.32 - 2, 1, x + w * 0.88, y - h * 0.32, 9);
+    g.addColorStop(0, "#fff6c8");
+    g.addColorStop(0.5, "#ffe14a");
+    g.addColorStop(1, "#d0a010");
     ctx.beginPath();
-    ctx.arc(x + w * 0.76, y - h * 1.28 - Math.sin(time * 8) * 4, 10, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.arc(x + w * 0.88, y - h * 0.32, 8, 0, Math.PI * 2);
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.fillStyle = "#ffe14a";
+    ctx.strokeStyle = "#8a6a08";
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.beginPath();
-    ctx.arc(x + w * 0.88, y - h * 0.32, 7, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.86, y - h * 0.34, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
     ctx.fill();
-    drawWheel(x + w * 0.28, y + 4, h * 0.22);
-    drawWheel(x + w * 0.72, y + 4, h * 0.22);
+
+    /* cowcatcher */
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.92, y - 4);
+    ctx.lineTo(x + w + 6, y + 10);
+    ctx.lineTo(x + w * 0.78, y + 10);
+    ctx.closePath();
+    ctx.fillStyle = "#c0c4c8";
+    ctx.fill();
+    ctx.strokeStyle = "#4a4a50";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    drawWheel(x + w * 0.28, y + 4, h * 0.22, spin);
+    drawWheel(x + w * 0.72, y + 4, h * 0.22, spin);
+
+    drawCoupler(x + w + m.gap * 0.5, y - h * 0.28);
   }
 
-  function drawCar(m, x, color, rider) {
+  function drawCar(m, x, palette, rider, idx) {
     var y = m.trackY;
     var w = m.carW;
     var h = m.carH * 0.78;
-    ctx.fillStyle = color;
+    var spin = trainMode === "depart" || trainMode === "arrive" ? time * 10 : time * 0.6;
+    var g;
+
+    trainShadow(m, x, w);
+
+    g = bodyGrad("car" + idx, x, y - h, w, h, palette);
     roundRect(x, y - h, w, h, 12);
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 4;
-    roundRect(x, y - h, w, h, 12);
+    ctx.strokeStyle = palette.rim;
+    ctx.lineWidth = 3.2;
     ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
-    roundRect(x + 10, y - h + 8, w - 20, h * 0.42, 8);
+
+    /* roof stripe */
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    roundRect(x + 6, y - h + 4, w - 12, h * 0.14, 6);
     ctx.fill();
-    drawWheel(x + w * 0.25, y + 4, h * 0.24);
-    drawWheel(x + w * 0.75, y + 4, h * 0.24);
+
+    /* window band */
+    g = ctx.createLinearGradient(x + 10, y - h + 14, x + 10, y - h + 14 + h * 0.38);
+    g.addColorStop(0, "#e8f8ff");
+    g.addColorStop(0.45, "#7ad0ff");
+    g.addColorStop(1, "#2a80c0");
+    roundRect(x + 10, y - h + 14, w - 20, h * 0.38, 8);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "#104060";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    /* window mullion + shine */
+    ctx.fillStyle = palette.rim;
+    ctx.fillRect(x + w * 0.5 - 1.5, y - h + 16, 3, h * 0.34);
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    roundRect(x + 14, y - h + 18, (w - 28) * 0.28, h * 0.12, 3);
+    ctx.fill();
+
+    /* lower panel */
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    roundRect(x + 12, y - h * 0.32, w - 24, h * 0.16, 5);
+    ctx.fill();
+
+    drawWheel(x + w * 0.25, y + 4, h * 0.24, spin);
+    drawWheel(x + w * 0.75, y + 4, h * 0.24, spin);
+
+    if (idx < 2) drawCoupler(x + w + m.gap * 0.5, y - h * 0.3);
+
     if (rider) {
-      BubbleAnimals.draw(ctx, rider, x + w * 0.5, y - h * 0.55, (Math.min(w, h) / 70), time * 0.2);
+      GGAnimals.draw(ctx, rider, x + w * 0.5, y - h * 0.55, (Math.min(w, h) / 70), time * 0.2);
     }
   }
 
   function drawTrain() {
     var m = metrics();
     var x = trainX;
-    drawEngine(m, x);
     var i;
+    drawEngine(m, x);
     for (i = 0; i < 3; i++) {
       drawCar(
         m,
         x + m.engineW + m.gap + i * (m.carW + m.gap),
         CAR_COLORS[i],
-        cars[i]
+        cars[i],
+        i
       );
     }
   }
@@ -371,19 +446,34 @@
   function drawPlatform() {
     var m = metrics();
     var y = m.platY + m.platSize * 0.55;
-    ctx.fillStyle = "#c48a48";
-    roundRect(W * 0.06, y - 10, W * 0.88, 22, 8);
-    ctx.fill();
-    ctx.fillStyle = "#a06a30";
-    ctx.fillRect(W * 0.08, y + 8, 10, H - y);
-    ctx.fillRect(W * 0.9, y + 8, 10, H - y);
-    var i, a, pulse;
+    var g, i, a, pulse;
     var idle = trainMode === "idle" && time - lastInteractionTime > 7;
+
+    g = ctx.createLinearGradient(0, y - 12, 0, y + 14);
+    g.addColorStop(0, "#e0b070");
+    g.addColorStop(0.5, "#c48a48");
+    g.addColorStop(1, "#8a5a28");
+    roundRect(W * 0.06, y - 10, W * 0.88, 24, 8);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "#6a3a18";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,230,180,0.4)";
+    ctx.fillRect(W * 0.08, y - 6, W * 0.84, 4);
+
+    g = ctx.createLinearGradient(0, y + 8, 0, H);
+    g.addColorStop(0, "#b07838");
+    g.addColorStop(1, "#6a4018");
+    ctx.fillStyle = g;
+    ctx.fillRect(W * 0.08, y + 10, 12, H - y);
+    ctx.fillRect(W * 0.9 - 2, y + 10, 12, H - y);
+
     for (i = 0; i < platform.length; i++) {
       a = platform[i];
       if (a.gone) continue;
       pulse = idle ? 1 + Math.sin(time * 5 + i * 1.3) * 0.07 : 1;
-      BubbleAnimals.draw(ctx, a.name, a.x, a.y, (a.size / 40) * pulse, time * 0.18 + i);
+      GGAnimals.draw(ctx, a.name, a.x, a.y, (a.size / 40) * pulse, time * 0.18 + i);
     }
   }
 
@@ -392,23 +482,69 @@
     puffs.push({
       x: trainX + m.engineW * 0.76 + rand(-4, 4),
       y: m.trackY - m.carH * 1.3,
-      vx: rand(-14, 14),
-      vy: rand(-70, -40),
-      r: rand(6, 11),
-      life: rand(0.7, 1.1),
-      t: 0
+      vx: rand(-18, 18),
+      vy: rand(-110, -55),
+      r: rand(10, 18),
+      life: rand(1.0, 1.6),
+      t: 0,
+      grow: rand(2.2, 3.4)
     });
   }
 
+  function spawnDust(x, y) {
+    var i, a;
+    for (i = 0; i < 8; i++) {
+      a = Math.PI + (i / 8) * Math.PI + rand(-0.2, 0.2);
+      dust.push({
+        x: x,
+        y: y + 8,
+        vx: Math.cos(a) * rand(30, 80),
+        vy: Math.sin(a) * rand(10, 40) - 10,
+        r: rand(4, 9),
+        life: rand(0.3, 0.55),
+        t: 0
+      });
+    }
+  }
+
+  function burstDepartConfetti() {
+    var m = metrics();
+    var i, cx, cy;
+    for (i = 0; i < 4; i++) {
+      cx = trainX + m.engineW * 0.4 + i * (m.carW + m.gap) * 0.9;
+      cy = m.trackY - m.carH * 0.7;
+      scene.confetti(cx, cy);
+    }
+  }
+
   function drawPuffs() {
-    var i, pf, k;
+    var i, pf, k, rr, g;
     for (i = 0; i < puffs.length; i++) {
       pf = puffs[i];
       k = pf.t / pf.life;
-      ctx.globalAlpha = Math.max(0, 0.75 * (1 - k));
-      ctx.fillStyle = "#ffffff";
+      rr = pf.r * (1 + k * pf.grow);
+      ctx.globalAlpha = Math.max(0, 0.7 * (1 - k) * (1 - k));
+      g = ctx.createRadialGradient(pf.x - rr * 0.2, pf.y - rr * 0.2, 1, pf.x, pf.y, rr);
+      g.addColorStop(0, "rgba(255,255,255,0.95)");
+      g.addColorStop(0.55, "rgba(230,230,235,0.7)");
+      g.addColorStop(1, "rgba(200,200,210,0)");
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(pf.x, pf.y, pf.r * (1 + k * 1.6), 0, Math.PI * 2);
+      ctx.arc(pf.x, pf.y, rr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDust() {
+    var i, d, k;
+    for (i = 0; i < dust.length; i++) {
+      d = dust[i];
+      k = d.t / d.life;
+      ctx.globalAlpha = Math.max(0, 0.45 * (1 - k));
+      ctx.fillStyle = "#c4a070";
+      ctx.beginPath();
+      ctx.ellipse(d.x, d.y, d.r * (1 + k), d.r * 0.55 * (1 + k * 0.5), 0, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
@@ -461,28 +597,39 @@
       tx: dest.x,
       ty: dest.y,
       slot: slot,
-      t: 0
+      t: 0,
+      landed: false
     };
-    if (window.TrainAudio) {
-      TrainAudio.toot();
-      TrainAudio.speak(a.name);
-    }
+    GGAudio.toot();
+    GGAudio.say(a.name);
   }
 
   function update(dt) {
-    var i;
-    for (i = 0; i < clouds.length; i++) {
-      clouds[i].x += clouds[i].drift * dt;
-      if (clouds[i].x > W + 80) clouds[i].x = -80;
-    }
+    var i, pf, d, k, e, dest;
+    scene.update(dt);
 
     if (hop) {
       hop.t += dt;
-      var k = Math.min(1, hop.t / 0.48);
-      var e = k * (2 - k);
+      k = Math.min(1, hop.t / 0.48);
+      e = k * (2 - k);
       hop.x = hop.sx + (hop.tx - hop.sx) * e;
       hop.y = hop.sy + (hop.ty - hop.sy) * e - Math.sin(k * Math.PI) * 90;
+      /* squash-stretch: stretch mid-air, squash near ends */
+      hop.sxScale = 1 - Math.sin(k * Math.PI) * 0.18;
+      hop.syScale = 1 + Math.sin(k * Math.PI) * 0.22;
+      if (k < 0.12) {
+        hop.sxScale = 1 + (0.12 - k) / 0.12 * 0.25;
+        hop.syScale = 1 - (0.12 - k) / 0.12 * 0.2;
+      }
+      if (k > 0.85) {
+        hop.sxScale = 1 + (k - 0.85) / 0.15 * 0.28;
+        hop.syScale = 1 - (k - 0.85) / 0.15 * 0.22;
+      }
       if (k >= 1) {
+        if (!hop.landed) {
+          hop.landed = true;
+          spawnDust(hop.tx, hop.ty);
+        }
         cars[hop.slot] = hop.name;
         hop = null;
         busy = false;
@@ -491,134 +638,113 @@
           trainMode = "depart";
           trainT = 0;
           puffTimer = 0;
-          if (window.TrainAudio) {
-            TrainAudio.chug();
-            TrainAudio.speak("All aboard!", 700);
-          }
+          departBurst = false;
+          GGAudio.cheer();
+          GGAudio.say("All aboard!", { delay: 250 });
+          setTimeout(function () { GGAudio.chug(); }, 550);
         }
       }
     }
 
     if (trainMode === "depart") {
       trainT += dt;
+      if (!departBurst && trainT > 0.05) {
+        departBurst = true;
+        burstDepartConfetti();
+      }
       if (trainT > 0.25) trainX += (420 + trainT * 260) * dt;
       puffTimer -= dt;
       if (puffTimer <= 0) {
-        puffTimer = 0.14;
+        puffTimer = 0.12;
         spawnPuff();
+        if (trainT < 1.2) spawnPuff();
       }
       if (trainX > W + 40) nextSet(true);
     } else if (trainMode === "arrive") {
       trainT += dt;
-      var dest = parkedX();
+      dest = parkedX();
       trainX += (dest - trainX) * Math.min(1, dt * 3.2);
       if (Math.abs(trainX - dest) < 2) {
         trainX = dest;
         trainMode = "idle";
         busy = false;
-        if (window.TrainAudio) TrainAudio.toot();
+        GGAudio.toot();
       }
     }
 
     for (i = puffs.length - 1; i >= 0; i--) {
-      var pf = puffs[i];
+      pf = puffs[i];
       pf.t += dt;
       pf.x += pf.vx * dt;
       pf.y += pf.vy * dt;
+      pf.vy *= 0.98;
       if (pf.t > pf.life) puffs.splice(i, 1);
+    }
+    for (i = dust.length - 1; i >= 0; i--) {
+      d = dust[i];
+      d.t += dt;
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      d.r += 10 * dt;
+      if (d.t > d.life) dust.splice(i, 1);
     }
   }
 
   function render() {
-    drawSky();
-    drawTracks(metrics());
+    var m = metrics();
+    var s, sx, sy;
+    scene.draw(ctx);
+    drawTracks(m);
     drawTrain();
     drawPuffs();
+    drawDust();
     drawPlatform();
     if (hop) {
-      var s = metrics().platSize / 40;
-      BubbleAnimals.draw(ctx, hop.name, hop.x, hop.y, s, hop.t * 3);
+      s = m.platSize / 40;
+      sx = hop.sxScale || 1;
+      sy = hop.syScale || 1;
+      ctx.save();
+      ctx.translate(hop.x, hop.y);
+      ctx.scale(sx, sy);
+      GGAnimals.draw(ctx, hop.name, 0, 0, s, hop.t * 3);
+      ctx.restore();
     }
+    scene.drawParticles(ctx);
   }
 
-  var last = performance.now();
-  function frame(now) {
-    var dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    time = now / 1000;
-    update(dt);
-    render();
-    requestAnimationFrame(frame);
-  }
-
-  function eventPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src = e;
-    if (e.changedTouches && e.changedTouches[0]) src = e.changedTouches[0];
-    return {
-      x: (src.clientX - rect.left) * (W / rect.width),
-      y: (src.clientY - rect.top) * (H / rect.height)
-    };
-  }
-
-  function onTap(e) {
-    e.preventDefault();
-    var t = performance.now();
-    if (t - lastTap < 40) return;
-    lastTap = t;
-    lastInteractionTime = t / 1000;
-    if (window.TrainAudio) TrainAudio.unlock();
-    if (busy || trainMode !== "idle") return;
-    var p = eventPos(e);
-    var a = hitPlatform(p.x, p.y);
-    if (a) {
-      boardAnimal(a);
-      return;
-    }
-    if (hitEngine(p.x, p.y)) {
-      if (window.TrainAudio) TrainAudio.toot();
-      spawnPuff();
-      spawnPuff();
-      spawnPuff();
-    }
-  }
-
-  var muteBtn = document.getElementById("mute");
-  function syncMuteBtn() {
-    if (!muteBtn || !window.TrainAudio) return;
-    var m = TrainAudio.isMuted();
-    muteBtn.classList.toggle("muted", m);
-    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
-  }
-  if (muteBtn) {
-    muteBtn.addEventListener("click", function () {
-      if (window.TrainAudio) {
-        TrainAudio.unlock();
-        TrainAudio.setMuted(!TrainAudio.isMuted());
+  GGShell.mount({
+    canvas: canvas,
+    ctx: ctx,
+    resize: function (w, h) {
+      W = w;
+      H = h;
+      gradCache = {};
+      scene.resize(w, h);
+      if (trainMode === "idle") trainX = parkedX();
+      layoutPlatform();
+    },
+    start: function () {
+      nextSet(false);
+    },
+    tap: function (x, y) {
+      lastInteractionTime = time;
+      if (busy || trainMode !== "idle") return;
+      var a = hitPlatform(x, y);
+      if (a) {
+        boardAnimal(a);
+        return;
       }
-      syncMuteBtn();
-    });
-    syncMuteBtn();
-  }
-
-  if (window.PointerEvent) {
-    canvas.addEventListener("pointerdown", onTap, { passive: false });
-  } else {
-    canvas.addEventListener("touchstart", onTap, { passive: false });
-    canvas.addEventListener("mousedown", onTap);
-  }
-  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-  window.addEventListener("resize", resize);
-  window.addEventListener("orientationchange", function () {
-    setTimeout(resize, 200);
-  });
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && window.TrainAudio && TrainAudio.isUnlocked()) {
-      TrainAudio.unlock();
+      if (hitEngine(x, y)) {
+        GGAudio.toot();
+        spawnPuff();
+        spawnPuff();
+        spawnPuff();
+      }
+    },
+    frame: function (dt, t) {
+      time = t;
+      update(dt);
+      render();
     }
   });
-
-  resize();
-  nextSet(false);
-  requestAnimationFrame(frame);
 })();

@@ -10,8 +10,10 @@
   <meta name="description" content="Zoo Train — hop animals onto the train. A quiet, joyful game for little kids.">
   <title>Zoo Train</title>
   <link rel="manifest" href="../../manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23ff6ad5'/%3E%3Ccircle cx='22' cy='24' r='8' fill='%23ffffff' opacity='0.7'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../../css/game.css">
+  <link rel="stylesheet" href="../../css/controls.css">
+  <link rel="icon" href="../../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../../icon-192.png">
 </head>
 <body>
   <a class="home-btn" href="../../index.html" aria-label="Gabrelia's Games home">
@@ -27,8 +29,10 @@
     </svg>
   </button>
   <canvas id="game" aria-label="Zoo Train game"></canvas>
-  <script src="js/audio.js"></script>
-  <script src="js/animals.js"></script>
+  <script src="../../js/audio.js"></script>
+  <script src="../../js/animals.js"></script>
+  <script src="../../js/shell.js"></script>
+  <script src="../../js/scene.js"></script>
   <script src="js/game.js"></script>
   <script>
     if ("serviceWorker" in navigator) {

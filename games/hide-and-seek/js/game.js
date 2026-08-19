@@ -8,13 +8,14 @@
 
   var W = 800;
   var H = 600;
-  var dpr = 1;
-  var lastTap = 0;
   var time = 0;
 
-  var clouds = [];
-  var flowers = [];
-  var sparkles = [];
+  var scene = GGScene.create({ ground: 0.78 });
+
+  var dust = [];
+  var foundGlow = null;
+  var shadowGrad = null;
+  var shadowKey = "";
 
   var roster = [];
   var target = "";
@@ -43,27 +44,21 @@
     return arr;
   }
 
-  function layoutDecor() {
-    clouds = [];
-    flowers = [];
-    var i, n = W > H ? 6 : 4;
-    for (i = 0; i < n; i++) {
-      clouds.push({
-        x: (i + 0.3) * (W / n) + rand(-30, 30),
-        y: rand(H * 0.06, H * 0.28),
-        s: rand(0.7, 1.3),
-        drift: rand(4, 12)
-      });
-    }
-    n = W > H ? 10 : 7;
-    for (i = 0; i < n; i++) {
-      flowers.push({
-        x: (i + 0.4) * (W / n) + rand(-16, 16),
-        y: rand(H * 0.82, H * 0.96),
-        color: pick(["#ff4d9a", "#ff8a1a", "#ffe14a", "#ff5ad5", "#7a5cff"]),
-        s: rand(0.8, 1.3)
-      });
-    }
+  function ensureCachedGrads() {
+    var key = W + "x" + H;
+    if (shadowKey === key && shadowGrad && foundGlow) return;
+    shadowKey = key;
+    var sw = Math.min(W, H) * 0.09;
+    shadowGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, sw);
+    shadowGrad.addColorStop(0, "rgba(40,70,20,0.28)");
+    shadowGrad.addColorStop(0.55, "rgba(40,70,20,0.12)");
+    shadowGrad.addColorStop(1, "rgba(40,70,20,0)");
+
+    var gw = Math.min(W, H) * 0.22;
+    foundGlow = ctx.createRadialGradient(0, 0, gw * 0.1, 0, 0, gw);
+    foundGlow.addColorStop(0, "rgba(255,230,120,0.55)");
+    foundGlow.addColorStop(0.45, "rgba(255,200,80,0.22)");
+    foundGlow.addColorStop(1, "rgba(255,180,60,0)");
   }
 
   function animalLayout() {
@@ -79,11 +74,13 @@
       a.y = y + (i === 1 ? -H * 0.02 : H * 0.01);
       a.r = size * 1.55;
       a.size = size;
+      a.breathPhase = i * 1.7 + rand(0, 1);
     }
+    ensureCachedGrads();
   }
 
   function nextRound() {
-    var names = BubbleAnimals.names.slice();
+    var names = GGAnimals.names.slice();
     shuffle(names);
     var choice = names[0];
     var guard = 0;
@@ -96,7 +93,7 @@
     target = choice;
     var trio = [choice, names[1], names[2]];
     shuffle(trio);
-    roster = trio.map(function (name) {
+    roster = trio.map(function (name, idx) {
       return {
         name: name,
         x: 0,
@@ -104,18 +101,22 @@
         r: 80,
         size: 60,
         mode: "idle",
-        t: 0
+        t: 0,
+        breathPhase: idx * 1.7,
+        sx: 1,
+        sy: 1,
+        hopY: 0
       };
     });
     animalLayout();
     busy = false;
     asked = false;
-    lastInteraction = performance.now();
+    lastInteraction = time;
     if (askTimeout) {
       clearTimeout(askTimeout);
       askTimeout = 0;
     }
-    if (window.HideAudio && HideAudio.isUnlocked()) askLater(1600);
+    if (GGAudio.isUnlocked()) askLater(1600);
   }
 
   function askWhere() {
@@ -124,7 +125,7 @@
       clearTimeout(askTimeout);
       askTimeout = 0;
     }
-    if (window.HideAudio) HideAudio.speak("Where's the " + target + "?");
+    GGAudio.say("Where's the " + target + "?");
   }
 
   function askLater(delay) {
@@ -135,128 +136,22 @@
     }, delay);
   }
 
-  function resize() {
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = vw;
-    H = vh;
-    canvas.width = Math.floor(vw * dpr);
-    canvas.height = Math.floor(vh * dpr);
-    canvas.style.width = vw + "px";
-    canvas.style.height = vh + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    layoutDecor();
-    if (roster.length) animalLayout();
-  }
-
-  function drawSky() {
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#3dbfff");
-    g.addColorStop(0.45, "#9ee8ff");
-    g.addColorStop(0.7, "#c8f7a0");
-    g.addColorStop(1, "#7ed957");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    var sunX = W * 0.86;
-    var sunY = H * 0.12;
-    var sunR = Math.min(W, H) * 0.09;
-    var rg = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, sunR * 1.8);
-    rg.addColorStop(0, "#fff6a0");
-    rg.addColorStop(0.45, "#ffe14a");
-    rg.addColorStop(1, "rgba(255,225,74,0)");
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ffe14a";
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff6c8";
-    ctx.beginPath();
-    ctx.arc(sunX - sunR * 0.25, sunY - sunR * 0.2, sunR * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-
-    var i, c;
-    for (i = 0; i < clouds.length; i++) {
-      c = clouds[i];
-      drawCloud(c.x, c.y, c.s);
-    }
-
-    ctx.fillStyle = "#5ec64a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.25, H * 0.7, W * 0.5, H * 0.78);
-    ctx.quadraticCurveTo(W * 0.75, H * 0.86, W, H * 0.74);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#6ed85a";
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.86);
-    ctx.quadraticCurveTo(W * 0.4, H * 0.8, W, H * 0.88);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    for (i = 0; i < flowers.length; i++) {
-      drawFlower(flowers[i]);
-    }
-  }
-
-  function drawCloud(x, y, s) {
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.beginPath();
-    ctx.arc(x, y, 22 * s, 0, Math.PI * 2);
-    ctx.arc(x + 24 * s, y - 8 * s, 28 * s, 0, Math.PI * 2);
-    ctx.arc(x + 50 * s, y, 20 * s, 0, Math.PI * 2);
-    ctx.arc(x + 22 * s, y + 10 * s, 20 * s, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawFlower(f) {
-    var i, a;
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.scale(f.s, f.s);
-    ctx.strokeStyle = "#2f8a28";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 18);
-    ctx.stroke();
-    for (i = 0; i < 5; i++) {
-      a = (i / 5) * Math.PI * 2;
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * 8, Math.sin(a) * 8 - 6, 7, 0, Math.PI * 2);
-      ctx.fillStyle = f.color;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(0, -6, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffe14a";
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function spawnSparkle(x, y) {
+  function spawnDust(x, y) {
     var i;
-    for (i = 0; i < 18; i++) {
-      var a = (i / 18) * Math.PI * 2 + rand(-0.1, 0.1);
-      sparkles.push({
-        x: x,
-        y: y,
-        vx: Math.cos(a) * rand(70, 220),
-        vy: Math.sin(a) * rand(70, 220) - 50,
+    for (i = 0; i < 10; i++) {
+      dust.push({
+        x: x + rand(-12, 12),
+        y: y + rand(4, 18),
+        vx: rand(-40, 40),
+        vy: rand(-55, -10),
         r: rand(4, 9),
-        color: pick(["#fff6a0", "#ffe14a", "#ff8ad8", "#fff", "#7a6bff"]),
-        life: rand(0.45, 0.85),
-        t: 0
+        life: rand(0.35, 0.6),
+        t: 0,
+        color: pick([
+          "rgba(210,185,130,0.55)",
+          "rgba(190,170,120,0.5)",
+          "rgba(230,210,160,0.45)"
+        ])
       });
     }
   }
@@ -280,34 +175,61 @@
     busy = true;
     a.mode = "found";
     a.t = 0;
-    spawnSparkle(a.x, a.y);
-    if (window.HideAudio) {
-      HideAudio.sparkle();
-      HideAudio.speak("You found the " + a.name + "!");
-    }
+    a.sx = 1;
+    a.sy = 1;
+    a.hopY = 0;
+    scene.confetti(a.x, a.y);
+    GGAudio.sparkle();
+    GGAudio.say("You found the " + a.name + "!");
   }
 
   function onWrong(a) {
     a.mode = "wiggle";
     a.t = 0;
-    if (window.HideAudio) {
-      HideAudio.wiggle();
-      HideAudio.speak("That's the " + a.name);
-      HideAudio.speak("Where's the " + target + "?", 1400);
-    }
+    spawnDust(a.x, a.y + a.size * 0.55);
+    GGAudio.wiggle();
+    GGAudio.say("That's the " + a.name);
+    GGAudio.say("Where's the " + target + "?", { delay: 1400, interrupt: false });
     asked = true;
+  }
+
+  function updateFoundPose(a) {
+    var t = a.t;
+    /* Happy hop with squash-and-stretch over ~1.45s celebration window */
+    if (t < 0.12) {
+      var u = t / 0.12;
+      a.sx = 1 + 0.22 * u;
+      a.sy = 1 - 0.18 * u;
+      a.hopY = 0;
+    } else if (t < 0.38) {
+      var v = (t - 0.12) / 0.26;
+      a.sx = 1.22 - 0.4 * v;
+      a.sy = 0.82 + 0.38 * v;
+      a.hopY = -Math.sin(v * Math.PI) * a.size * 0.42;
+    } else if (t < 0.55) {
+      var w = (t - 0.38) / 0.17;
+      a.sx = 0.82 + 0.28 * w;
+      a.sy = 1.2 - 0.3 * w;
+      a.hopY = Math.sin(w * Math.PI) * a.size * 0.08;
+    } else if (t < 0.85) {
+      var z = (t - 0.55) / 0.3;
+      a.sx = 1.1 - 0.1 * z;
+      a.sy = 0.9 + 0.1 * z;
+      a.hopY = -Math.sin(z * Math.PI) * a.size * 0.18;
+    } else {
+      a.sx = 1;
+      a.sy = 1;
+      a.hopY = 0;
+    }
   }
 
   function update(dt) {
     var i, a, p;
-    for (i = 0; i < clouds.length; i++) {
-      clouds[i].x += clouds[i].drift * dt;
-      if (clouds[i].x > W + 80) clouds[i].x = -80;
-    }
-    if (asked && !busy && window.HideAudio && HideAudio.isUnlocked() &&
-        performance.now() - lastInteraction > 8000) {
+    /* Nudge a stalled child, but only after 8 seconds of real play: `time`
+       stops while the app is in the background. */
+    if (asked && !busy && GGAudio.isUnlocked() && time - lastInteraction > 8) {
       askWhere();
-      lastInteraction = performance.now();
+      lastInteraction = time;
     }
     for (i = 0; i < roster.length; i++) {
       a = roster[i];
@@ -316,124 +238,134 @@
         a.mode = "idle";
         a.t = 0;
       }
-      if (a.mode === "found" && a.t > 1.45) {
-        nextRound();
-        return;
+      if (a.mode === "found") {
+        updateFoundPose(a);
+        if (a.t > 1.45) {
+          nextRound();
+          return;
+        }
+      } else if (a.mode === "idle") {
+        a.sx = 1;
+        a.sy = 1;
+        a.hopY = 0;
+      } else if (a.mode === "wiggle") {
+        a.sx = 1;
+        a.sy = 1;
+        a.hopY = 0;
       }
     }
-    for (i = sparkles.length - 1; i >= 0; i--) {
-      p = sparkles[i];
+    for (i = dust.length - 1; i >= 0; i--) {
+      p = dust[i];
       p.t += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 180 * dt;
-      if (p.t > p.life) sparkles.splice(i, 1);
+      p.vy += 120 * dt;
+      p.vx *= 0.96;
+      if (p.t > p.life) dust.splice(i, 1);
     }
+  }
+
+  function drawContactShadow(a, breath) {
+    var footY = a.y + a.size * 0.62 + a.hopY * 0.15;
+    var sw = a.size * (0.95 + (1 - breath) * 0.08);
+    var sh = a.size * 0.22 * (0.9 + (1 - breath) * 0.15);
+    ctx.save();
+    ctx.translate(a.x, footY);
+    ctx.scale(sw / (Math.min(W, H) * 0.09), sh / (Math.min(W, H) * 0.09));
+    ctx.fillStyle = shadowGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.min(W, H) * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFoundGlow(a) {
+    var gw = Math.min(W, H) * 0.22;
+    ctx.save();
+    ctx.translate(a.x, a.y + a.hopY * 0.5);
+    ctx.fillStyle = foundGlow;
+    ctx.beginPath();
+    ctx.arc(0, 0, gw, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   function render() {
-    drawSky();
-    var i, a, p, tAnim, extra;
+    scene.draw(ctx);
+    ensureCachedGrads();
+    var i, a, p, tAnim, breath, scaleMul, drawY;
     for (i = 0; i < roster.length; i++) {
       a = roster[i];
-      extra = 1;
+      breath = 1 + Math.sin(time * 2.1 + a.breathPhase) * 0.035;
+      if (a.mode === "found") breath = 1;
+
+      drawContactShadow(a, breath);
+
+      if (a.mode === "found") {
+        drawFoundGlow(a);
+      }
+
       tAnim = time * 0.16 + i;
       if (a.mode === "wiggle") tAnim = a.t * 5;
-      if (a.mode === "found") {
-        extra = 1.12;
-        tAnim = a.t * 3.4;
-      }
-      BubbleAnimals.draw(ctx, a.name, a.x, a.y, (a.size / 40) * extra, tAnim);
+      if (a.mode === "found") tAnim = a.t * 3.4;
+
+      scaleMul = (a.size / 40) * breath;
+      if (a.mode === "found") scaleMul = (a.size / 40) * 1.08;
+
+      drawY = a.y + a.hopY;
+      ctx.save();
+      ctx.translate(a.x, drawY);
+      ctx.scale(a.sx, a.sy);
+      GGAnimals.draw(ctx, a.name, 0, 0, scaleMul, tAnim);
+      ctx.restore();
     }
-    for (i = 0; i < sparkles.length; i++) {
-      p = sparkles[i];
-      ctx.globalAlpha = Math.max(0, 1 - p.t / p.life);
+
+    for (i = 0; i < dust.length; i++) {
+      p = dust[i];
+      ctx.globalAlpha = Math.max(0, 1 - p.t / p.life) * 0.85;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.ellipse(p.x, p.y, p.r * (1 + p.t * 1.2), p.r * 0.65, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
+
+    scene.drawParticles(ctx);
   }
 
-  var last = performance.now();
-  function frame(now) {
-    var dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-    time = now / 1000;
-    update(dt);
-    render();
-    requestAnimationFrame(frame);
-  }
-
-  function eventPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src = e;
-    if (e.changedTouches && e.changedTouches[0]) src = e.changedTouches[0];
-    return {
-      x: (src.clientX - rect.left) * (W / rect.width),
-      y: (src.clientY - rect.top) * (H / rect.height)
-    };
-  }
-
-  function onTap(e) {
-    e.preventDefault();
-    var t = performance.now();
-    if (t - lastTap < 40) return;
-    lastTap = t;
-    lastInteraction = t;
-    if (window.HideAudio) HideAudio.unlock();
-    if (busy) return;
-    if (!asked) {
-      askWhere();
-      return;
-    }
-    var p = eventPos(e);
-    var a = hitAnimal(p.x, p.y);
-    if (!a) {
-      askWhere();
-      return;
-    }
-    if (a.name === target) onCorrect(a);
-    else onWrong(a);
-  }
-
-  var muteBtn = document.getElementById("mute");
-  function syncMuteBtn() {
-    if (!muteBtn || !window.HideAudio) return;
-    var m = HideAudio.isMuted();
-    muteBtn.classList.toggle("muted", m);
-    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
-  }
-  if (muteBtn) {
-    muteBtn.addEventListener("click", function () {
-      if (window.HideAudio) {
-        HideAudio.unlock();
-        HideAudio.setMuted(!HideAudio.isMuted());
+  GGShell.mount({
+    canvas: canvas,
+    ctx: ctx,
+    resize: function (w, h) {
+      W = w;
+      H = h;
+      scene.resize(w, h);
+      shadowKey = "";
+      if (roster.length) animalLayout();
+    },
+    start: function () {
+      nextRound();
+    },
+    tap: function (x, y) {
+      lastInteraction = time;
+      if (busy) return;
+      if (!asked) {
+        askWhere();
+        return;
       }
-      syncMuteBtn();
-    });
-    syncMuteBtn();
-  }
-
-  if (window.PointerEvent) {
-    canvas.addEventListener("pointerdown", onTap, { passive: false });
-  } else {
-    canvas.addEventListener("touchstart", onTap, { passive: false });
-    canvas.addEventListener("mousedown", onTap);
-  }
-  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-  window.addEventListener("resize", resize);
-  window.addEventListener("orientationchange", function () {
-    setTimeout(resize, 200);
-  });
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && window.HideAudio && HideAudio.isUnlocked()) {
-      HideAudio.unlock();
+      var a = hitAnimal(x, y);
+      if (!a) {
+        askWhere();
+        return;
+      }
+      if (a.name === target) onCorrect(a);
+      else onWrong(a);
+    },
+    frame: function (dt, t) {
+      time = t;
+      scene.update(dt);
+      update(dt);
+      render();
     }
   });
-
-  resize();
-  nextRound();
-  requestAnimationFrame(frame);
 })();

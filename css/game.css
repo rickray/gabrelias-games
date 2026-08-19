@@ -1,0 +1,31 @@
+/* Gabrelia's Games — shared game skin: one full-screen canvas, no chrome,
+   tablet-first (Fire HD / Silk). Corner buttons live in controls.css. */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #4ec5ff 0%, #b8f0ff 55%, #9be36a 100%);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: pointer;
+}
+
+@media (orientation: landscape) {
+  html, body {
+    background: linear-gradient(180deg, #4ec5ff 0%, #c8f4ff 50%, #8ed85a 100%);
+  }
+}
