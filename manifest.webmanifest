@@ -1,0 +1,18 @@
+{
+  "name": "Gabrelia's Games",
+  "short_name": "Gabrelia",
+  "description": "Bright tap games for little kids. No ads, no accounts, works offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#4ec5ff",
+  "theme_color": "#4ec5ff",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

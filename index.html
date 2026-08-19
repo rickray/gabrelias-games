@@ -9,8 +9,9 @@
   <meta name="theme-color" content="#4ec5ff">
   <meta name="description" content="Gabrelia's Games — bright tap games for little kids.">
   <title>Gabrelia's Games</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="css/hub.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23ff6ad5'/%3E%3Ccircle cx='22' cy='24' r='8' fill='%23ffffff' opacity='0.7'/%3E%3C/svg%3E">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
 </head>
 <body>
   <main class="hub">
@@ -54,6 +55,16 @@
         <span class="tile-name">Zoo Train</span>
       </a>
     </nav>
+    <footer class="parents">
+      <p>No ads &middot; No accounts &middot; Plays offline</p>
+    </footer>
   </main>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

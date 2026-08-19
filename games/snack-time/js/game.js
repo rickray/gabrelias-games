@@ -36,6 +36,7 @@
   var chompFood = null;
   var sparkles = [];
   var busy = false;
+  var announced = false;
   var time = 0;
 
   function rand(a, b) {
@@ -109,6 +110,8 @@
     animalAnim = { mode: "idle", t: 0 };
     chompFood = null;
     busy = false;
+    announced = false;
+    if (window.SnackAudio && SnackAudio.isUnlocked()) announce(1200);
 
     var others = PAIRS.filter(function (p) { return p.food !== choice.food; });
     shuffle(others);
@@ -298,6 +301,27 @@
     ctx.closePath();
   }
 
+  function drawThought(ax, ay, size) {
+    var br = size * 0.62;
+    var bx = ax + size * 1.08;
+    var by = ay - size * 1.18 + Math.sin(time * 2) * size * 0.05;
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.arc(ax + size * 0.42, ay - size * 0.5, size * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(ax + size * 0.68, ay - size * 0.8, size * 0.13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.fill();
+    ctx.strokeStyle = "#ffd24a";
+    ctx.lineWidth = Math.max(3, size * 0.05);
+    ctx.stroke();
+    SnackFoods.draw(ctx, pair.food, bx, by, br / 36);
+  }
+
   function hitTile(x, y) {
     var i, t, half, dx, dy;
     for (i = 0; i < tiles.length; i++) {
@@ -309,6 +333,23 @@
       if (Math.abs(dx) < half && Math.abs(dy) < half) return t;
     }
     return null;
+  }
+
+  function hitAnimal(x, y) {
+    var ap = animalPos();
+    var size = Math.min(W, H) * (H > W ? 0.16 : 0.14);
+    var r = size * 1.35;
+    var dx = x - ap.x;
+    var dy = y - ap.y;
+    return dx * dx + dy * dy < r * r;
+  }
+
+  function announce(delay) {
+    if (!window.SnackAudio || !pair) return;
+    SnackAudio.speak(
+      "The " + pair.animal + " wants " + SnackFoods.wantPhrase(pair.food),
+      delay || 0
+    );
   }
 
   function onCorrect(tile) {
@@ -327,8 +368,7 @@
     spawnSparkle(tile.x, tile.y);
     if (window.SnackAudio) {
       SnackAudio.yum();
-      var want = SnackFoods.wantPhrase(pair.food);
-      SnackAudio.speak("The " + pair.animal + " wants " + want);
+      SnackAudio.speak("Yum!");
     }
   }
 
@@ -338,6 +378,7 @@
     if (window.SnackAudio) {
       SnackAudio.bounce();
       SnackAudio.speak(SnackFoods.sayWrong(tile.food));
+      announce(1500);
     }
   }
 
@@ -390,6 +431,7 @@
       tAnim = animalAnim.t * 3;
     }
     BubbleAnimals.draw(ctx, pair.animal, ap.x, ap.y, (size / 40) * extra, tAnim);
+    if (animalAnim.mode !== "chomp") drawThought(ap.x, ap.y, size);
 
     var i, p;
     if (chompFood && chompFood.t < 0.5) {
@@ -436,14 +478,51 @@
     if (busy) return;
     var p = eventPos(e);
     var tile = hitTile(p.x, p.y);
-    if (!tile) return;
+    var first = !announced;
+    announced = true;
+    if (!tile) {
+      if (first) {
+        announce(0);
+        return;
+      }
+      if (hitAnimal(p.x, p.y)) {
+        animalAnim = { mode: "wiggle", t: 0 };
+        if (window.SnackAudio) {
+          SnackAudio.bounce();
+          SnackAudio.speak("I'm the " + pair.animal + "!");
+        }
+      }
+      return;
+    }
     tile.press = 1;
     if (tile.correct) onCorrect(tile);
     else onWrong(tile);
   }
 
-  canvas.addEventListener("pointerdown", onTap, { passive: false });
-  canvas.addEventListener("touchstart", onTap, { passive: false });
+  var muteBtn = document.getElementById("mute");
+  function syncMuteBtn() {
+    if (!muteBtn || !window.SnackAudio) return;
+    var m = SnackAudio.isMuted();
+    muteBtn.classList.toggle("muted", m);
+    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
+  }
+  if (muteBtn) {
+    muteBtn.addEventListener("click", function () {
+      if (window.SnackAudio) {
+        SnackAudio.unlock();
+        SnackAudio.setMuted(!SnackAudio.isMuted());
+      }
+      syncMuteBtn();
+    });
+    syncMuteBtn();
+  }
+
+  if (window.PointerEvent) {
+    canvas.addEventListener("pointerdown", onTap, { passive: false });
+  } else {
+    canvas.addEventListener("touchstart", onTap, { passive: false });
+    canvas.addEventListener("mousedown", onTap);
+  }
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function () {

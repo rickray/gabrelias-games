@@ -70,6 +70,19 @@ body {
   text-decoration: none;
   overflow: hidden;
   touch-action: manipulation;
+  animation: tile-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.tile:nth-child(1) { animation-delay: 0.05s; }
+.tile:nth-child(2) { animation-delay: 0.15s; }
+.tile:nth-child(3) { animation-delay: 0.25s; }
+.tile:nth-child(4) { animation-delay: 0.35s; }
+
+@keyframes tile-in {
+  from {
+    transform: translateY(28px) scale(0.9);
+    opacity: 0;
+  }
 }
 
 .tile-name {
@@ -82,6 +95,55 @@ body {
 .tile-art {
   font-size: 72px;
   line-height: 1;
+  animation: art-sway 6s ease-in-out infinite;
+}
+
+@keyframes art-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg) translateY(-4px); }
+}
+
+@media (hover: hover) {
+  .tile:hover {
+    transform: translateY(-4px);
+    filter: brightness(1.05);
+  }
+
+  .tile:hover .tile-art {
+    animation-play-state: paused;
+    transform: scale(1.12);
+  }
+}
+
+.tile:focus-visible {
+  outline: 6px solid #fff;
+  outline-offset: 4px;
+}
+
+.parents {
+  margin-top: auto;
+  padding-top: 26px;
+  text-align: center;
+}
+
+.parents p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(20, 80, 120, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .bubble,
+  .crumb,
+  .peek,
+  .puff,
+  .tile-art {
+    animation: none;
+  }
 }
 
 .tile-bubble {
@@ -110,9 +172,14 @@ body {
   border: 3px solid rgba(255,255,255,0.55);
 }
 
-.b1 { width: 56px; height: 56px; top: 16px; left: 18px; }
-.b2 { width: 36px; height: 36px; top: 28px; right: 22px; }
-.b3 { width: 28px; height: 28px; bottom: 22px; left: 28px; }
+.b1 { width: 56px; height: 56px; top: 16px; left: 18px; animation: bubble-drift 5.2s ease-in-out infinite; }
+.b2 { width: 36px; height: 36px; top: 28px; right: 22px; animation: bubble-drift 4.1s ease-in-out 0.8s infinite; }
+.b3 { width: 28px; height: 28px; bottom: 22px; left: 28px; animation: bubble-drift 4.7s ease-in-out 1.6s infinite; }
+
+@keyframes bubble-drift {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.06); }
+}
 
 .tile-snack {
   background: linear-gradient(180deg, #ffd24a 0%, #ff9a1a 55%, #ff6a2a 100%);
@@ -139,9 +206,14 @@ body {
   background: rgba(255, 255, 255, 0.55);
 }
 
-.c1 { width: 18px; height: 18px; top: 22px; left: 24px; }
-.c2 { width: 12px; height: 12px; top: 36px; right: 28px; }
-.c3 { width: 16px; height: 10px; bottom: 28px; left: 36px; border-radius: 40%; }
+.c1 { width: 18px; height: 18px; top: 22px; left: 24px; animation: crumb-bob 3.6s ease-in-out infinite; }
+.c2 { width: 12px; height: 12px; top: 36px; right: 28px; animation: crumb-bob 3.1s ease-in-out 0.7s infinite; }
+.c3 { width: 16px; height: 10px; bottom: 28px; left: 36px; border-radius: 40%; animation: crumb-bob 4s ease-in-out 1.3s infinite; }
+
+@keyframes crumb-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(12deg); }
+}
 
 .tile-seek {
   background: linear-gradient(180deg, #9a7cff 0%, #5a7cff 55%, #2ec5ff 100%);
@@ -169,8 +241,13 @@ body {
   border: 3px solid rgba(255, 255, 255, 0.45);
 }
 
-.p1 { width: 44px; height: 44px; top: 14px; right: 18px; }
-.p2 { width: 28px; height: 28px; bottom: 24px; left: 20px; }
+.p1 { width: 44px; height: 44px; top: 14px; right: 18px; animation: peek-blink 4.4s ease-in-out infinite; }
+.p2 { width: 28px; height: 28px; bottom: 24px; left: 20px; animation: peek-blink 4.4s ease-in-out 2.2s infinite; }
+
+@keyframes peek-blink {
+  0%, 42%, 58%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.82); opacity: 0.6; }
+}
 
 .tile-train {
   background: linear-gradient(180deg, #ff6a6a 0%, #ff8a3a 45%, #3ecf8a 100%);
@@ -197,9 +274,15 @@ body {
   background: rgba(255, 255, 255, 0.55);
 }
 
-.f1 { width: 22px; height: 22px; top: 16px; left: 28px; }
-.f2 { width: 16px; height: 16px; top: 10px; left: 48px; }
-.f3 { width: 12px; height: 12px; top: 8px; left: 64px; }
+.f1 { width: 22px; height: 22px; top: 16px; left: 28px; animation: puff-steam 2.8s ease-out infinite; }
+.f2 { width: 16px; height: 16px; top: 10px; left: 48px; animation: puff-steam 2.8s ease-out 0.5s infinite; }
+.f3 { width: 12px; height: 12px; top: 8px; left: 64px; animation: puff-steam 2.8s ease-out 1s infinite; }
+
+@keyframes puff-steam {
+  0% { transform: translateY(6px) scale(0.6); opacity: 0; }
+  35% { opacity: 0.9; }
+  100% { transform: translateY(-14px) scale(1.15); opacity: 0; }
+}
 
 @media (orientation: landscape) {
   html, body {

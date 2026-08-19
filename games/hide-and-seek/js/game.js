@@ -21,7 +21,8 @@
   var lastTarget = "";
   var asked = false;
   var busy = false;
-  var askTimer = 0;
+  var askTimeout = 0;
+  var lastInteraction = 0;
 
   function rand(a, b) {
     return a + Math.random() * (b - a);
@@ -109,12 +110,29 @@
     animalLayout();
     busy = false;
     asked = false;
-    askTimer = 0;
+    lastInteraction = performance.now();
+    if (askTimeout) {
+      clearTimeout(askTimeout);
+      askTimeout = 0;
+    }
+    if (window.HideAudio && HideAudio.isUnlocked()) askLater(1600);
   }
 
   function askWhere() {
     asked = true;
+    if (askTimeout) {
+      clearTimeout(askTimeout);
+      askTimeout = 0;
+    }
     if (window.HideAudio) HideAudio.speak("Where's the " + target + "?");
+  }
+
+  function askLater(delay) {
+    var wanted = target;
+    askTimeout = setTimeout(function () {
+      askTimeout = 0;
+      if (wanted === target && !busy) askWhere();
+    }, delay);
   }
 
   function resize() {
@@ -265,7 +283,7 @@
     spawnSparkle(a.x, a.y);
     if (window.HideAudio) {
       HideAudio.sparkle();
-      HideAudio.speak(a.name);
+      HideAudio.speak("You found the " + a.name + "!");
     }
   }
 
@@ -285,6 +303,11 @@
     for (i = 0; i < clouds.length; i++) {
       clouds[i].x += clouds[i].drift * dt;
       if (clouds[i].x > W + 80) clouds[i].x = -80;
+    }
+    if (asked && !busy && window.HideAudio && HideAudio.isUnlocked() &&
+        performance.now() - lastInteraction > 8000) {
+      askWhere();
+      lastInteraction = performance.now();
     }
     for (i = 0; i < roster.length; i++) {
       a = roster[i];
@@ -358,21 +381,47 @@
     var t = performance.now();
     if (t - lastTap < 40) return;
     lastTap = t;
+    lastInteraction = t;
     if (window.HideAudio) HideAudio.unlock();
     if (busy) return;
+    if (!asked) {
+      askWhere();
+      return;
+    }
     var p = eventPos(e);
     var a = hitAnimal(p.x, p.y);
     if (!a) {
-      if (!asked) askWhere();
+      askWhere();
       return;
     }
-    asked = true;
     if (a.name === target) onCorrect(a);
     else onWrong(a);
   }
 
-  canvas.addEventListener("pointerdown", onTap, { passive: false });
-  canvas.addEventListener("touchstart", onTap, { passive: false });
+  var muteBtn = document.getElementById("mute");
+  function syncMuteBtn() {
+    if (!muteBtn || !window.HideAudio) return;
+    var m = HideAudio.isMuted();
+    muteBtn.classList.toggle("muted", m);
+    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
+  }
+  if (muteBtn) {
+    muteBtn.addEventListener("click", function () {
+      if (window.HideAudio) {
+        HideAudio.unlock();
+        HideAudio.setMuted(!HideAudio.isMuted());
+      }
+      syncMuteBtn();
+    });
+    syncMuteBtn();
+  }
+
+  if (window.PointerEvent) {
+    canvas.addEventListener("pointerdown", onTap, { passive: false });
+  } else {
+    canvas.addEventListener("touchstart", onTap, { passive: false });
+    canvas.addEventListener("mousedown", onTap);
+  }
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function () {

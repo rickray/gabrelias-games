@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#4ec5ff">
   <meta name="description" content="Hide and Seek — find the animal you hear. A quiet, joyful game for little kids.">
   <title>Hide and Seek</title>
+  <link rel="manifest" href="../../manifest.webmanifest">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23ff6ad5'/%3E%3Ccircle cx='22' cy='24' r='8' fill='%23ffffff' opacity='0.7'/%3E%3C/svg%3E">
 </head>
@@ -18,9 +19,23 @@
       <path fill="#c46a20" d="M12 3.2 3 11h3v9h5v-6h2v6h5v-9h3L12 3.2z"/>
     </svg>
   </a>
+  <button class="mute-btn" id="mute" type="button" aria-pressed="false" aria-label="Turn sound on or off">
+    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+      <path fill="#c46a20" d="M4 9v6h4l5 4V5L8 9H4z"/>
+      <path class="wav" fill="none" stroke="#c46a20" stroke-width="2" stroke-linecap="round" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>
+      <line class="slash" x1="4" y1="4" x2="20" y2="20" stroke="#d04040" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+  </button>
   <canvas id="game" aria-label="Hide and Seek game"></canvas>
   <script src="js/audio.js"></script>
   <script src="js/animals.js"></script>
   <script src="js/game.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("../../sw.js").catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

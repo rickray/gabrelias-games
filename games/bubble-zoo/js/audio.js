@@ -8,6 +8,25 @@
   var master = null;
   var voicesReady = false;
 
+  var MUTE_KEY = "gg-muted";
+  var muted = false;
+  try {
+    muted = !!(global.localStorage && global.localStorage.getItem(MUTE_KEY) === "1");
+  } catch (e) {}
+
+  function applyMute() {
+    if (master) master.gain.value = muted ? 0 : 0.55;
+  }
+
+  function setMuted(m) {
+    muted = !!m;
+    try {
+      if (global.localStorage) global.localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
+    } catch (e) {}
+    applyMute();
+    if (muted && global.speechSynthesis) global.speechSynthesis.cancel();
+  }
+
   var NAMES = {
     lion: "lion",
     elephant: "elephant",
@@ -33,7 +52,7 @@
     if (!AC) return null;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.55;
+    master.gain.value = muted ? 0 : 0.55;
     master.connect(ctx.destination);
     return ctx;
   }
@@ -136,7 +155,7 @@
   }
 
   function speakName(name) {
-    if (!global.speechSynthesis) return;
+    if (muted || !global.speechSynthesis) return;
     var text = NAMES[name] || String(name || "");
     if (!text) return;
     try {
@@ -159,6 +178,8 @@
   global.BubbleAudio = {
     unlock: unlock,
     isUnlocked: function () { return unlocked; },
+    setMuted: setMuted,
+    isMuted: function () { return muted; },
     pop: pop,
     animal: animal
   };

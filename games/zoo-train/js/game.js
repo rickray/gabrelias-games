@@ -14,6 +14,8 @@
 
   var clouds = [];
   var flowers = [];
+  var puffs = [];
+  var puffTimer = 0;
 
   var CAR_COLORS = ["#ff6a6a", "#ffd24a", "#7a6bff"];
   var trainX = 0;
@@ -24,6 +26,7 @@
   var hop = null;
   var busy = false;
   var lastPicks = [];
+  var lastInteractionTime = 0;
 
   function rand(a, b) {
     return a + Math.random() * (b - a);
@@ -374,12 +377,41 @@
     ctx.fillStyle = "#a06a30";
     ctx.fillRect(W * 0.08, y + 8, 10, H - y);
     ctx.fillRect(W * 0.9, y + 8, 10, H - y);
-    var i, a;
+    var i, a, pulse;
+    var idle = trainMode === "idle" && time - lastInteractionTime > 7;
     for (i = 0; i < platform.length; i++) {
       a = platform[i];
       if (a.gone) continue;
-      BubbleAnimals.draw(ctx, a.name, a.x, a.y, a.size / 40, time * 0.18 + i);
+      pulse = idle ? 1 + Math.sin(time * 5 + i * 1.3) * 0.07 : 1;
+      BubbleAnimals.draw(ctx, a.name, a.x, a.y, (a.size / 40) * pulse, time * 0.18 + i);
     }
+  }
+
+  function spawnPuff() {
+    var m = metrics();
+    puffs.push({
+      x: trainX + m.engineW * 0.76 + rand(-4, 4),
+      y: m.trackY - m.carH * 1.3,
+      vx: rand(-14, 14),
+      vy: rand(-70, -40),
+      r: rand(6, 11),
+      life: rand(0.7, 1.1),
+      t: 0
+    });
+  }
+
+  function drawPuffs() {
+    var i, pf, k;
+    for (i = 0; i < puffs.length; i++) {
+      pf = puffs[i];
+      k = pf.t / pf.life;
+      ctx.globalAlpha = Math.max(0, 0.75 * (1 - k));
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(pf.x, pf.y, pf.r * (1 + k * 1.6), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
 
   function nextEmpty() {
@@ -404,6 +436,13 @@
       }
     }
     return best;
+  }
+
+  function hitEngine(x, y) {
+    if (trainMode !== "idle") return false;
+    var m = metrics();
+    return x >= trainX && x <= trainX + m.engineW &&
+           y >= m.trackY - m.carH * 1.5 && y <= m.trackY + 12;
   }
 
   function boardAnimal(a) {
@@ -451,7 +490,11 @@
           busy = true;
           trainMode = "depart";
           trainT = 0;
-          if (window.TrainAudio) TrainAudio.chug();
+          puffTimer = 0;
+          if (window.TrainAudio) {
+            TrainAudio.chug();
+            TrainAudio.speak("All aboard!", 700);
+          }
         }
       }
     }
@@ -459,6 +502,11 @@
     if (trainMode === "depart") {
       trainT += dt;
       if (trainT > 0.25) trainX += (420 + trainT * 260) * dt;
+      puffTimer -= dt;
+      if (puffTimer <= 0) {
+        puffTimer = 0.14;
+        spawnPuff();
+      }
       if (trainX > W + 40) nextSet(true);
     } else if (trainMode === "arrive") {
       trainT += dt;
@@ -468,7 +516,16 @@
         trainX = dest;
         trainMode = "idle";
         busy = false;
+        if (window.TrainAudio) TrainAudio.toot();
       }
+    }
+
+    for (i = puffs.length - 1; i >= 0; i--) {
+      var pf = puffs[i];
+      pf.t += dt;
+      pf.x += pf.vx * dt;
+      pf.y += pf.vy * dt;
+      if (pf.t > pf.life) puffs.splice(i, 1);
     }
   }
 
@@ -476,6 +533,7 @@
     drawSky();
     drawTracks(metrics());
     drawTrain();
+    drawPuffs();
     drawPlatform();
     if (hop) {
       var s = metrics().platSize / 40;
@@ -508,15 +566,47 @@
     var t = performance.now();
     if (t - lastTap < 40) return;
     lastTap = t;
+    lastInteractionTime = t / 1000;
     if (window.TrainAudio) TrainAudio.unlock();
     if (busy || trainMode !== "idle") return;
     var p = eventPos(e);
     var a = hitPlatform(p.x, p.y);
-    if (a) boardAnimal(a);
+    if (a) {
+      boardAnimal(a);
+      return;
+    }
+    if (hitEngine(p.x, p.y)) {
+      if (window.TrainAudio) TrainAudio.toot();
+      spawnPuff();
+      spawnPuff();
+      spawnPuff();
+    }
   }
 
-  canvas.addEventListener("pointerdown", onTap, { passive: false });
-  canvas.addEventListener("touchstart", onTap, { passive: false });
+  var muteBtn = document.getElementById("mute");
+  function syncMuteBtn() {
+    if (!muteBtn || !window.TrainAudio) return;
+    var m = TrainAudio.isMuted();
+    muteBtn.classList.toggle("muted", m);
+    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
+  }
+  if (muteBtn) {
+    muteBtn.addEventListener("click", function () {
+      if (window.TrainAudio) {
+        TrainAudio.unlock();
+        TrainAudio.setMuted(!TrainAudio.isMuted());
+      }
+      syncMuteBtn();
+    });
+    syncMuteBtn();
+  }
+
+  if (window.PointerEvent) {
+    canvas.addEventListener("pointerdown", onTap, { passive: false });
+  } else {
+    canvas.addEventListener("touchstart", onTap, { passive: false });
+    canvas.addEventListener("mousedown", onTap);
+  }
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function () {

@@ -17,6 +17,7 @@
   var flowers = [];
   var lastAnimal = "";
   var lastTap = 0;
+  var lastInteractionTime = 0;
 
   var BUBBLE_COLORS = [
     { body: "#ff4d9a", rim: "#ff8ac4", shine: "rgba(255,255,255,0.85)" },
@@ -157,6 +158,24 @@
     if (window.BubbleAudio) BubbleAudio.pop();
     spawnBurst(b.x, b.y, b.color);
     spawnAnimal(b.x, b.y);
+  }
+
+  function spawnTapSparkle(x, y) {
+    var i, n = 8;
+    for (i = 0; i < n; i++) {
+      var a = (i / n) * Math.PI * 2 + rand(-0.3, 0.3);
+      var sp = rand(40, 120);
+      bursts.push({
+        x: x,
+        y: y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 30,
+        r: rand(3, 6),
+        color: pick(["#ffffff", "#fff6a0", "#c8f4ff"]),
+        life: rand(0.3, 0.55),
+        t: 0
+      });
+    }
   }
 
   function hitTest(x, y) {
@@ -324,6 +343,9 @@
     var appear = Math.min(1, (time - b.born) * 3);
     var s = b.dying ? Math.max(0, 1 - b.dieT * 4) : (b.scale || appear);
     if (s <= 0.01) return;
+    if (!b.dying && time - lastInteractionTime > 6) {
+      s *= 1 + Math.sin(time * 4 + b.wobble) * 0.07;
+    }
     var wob = Math.sin(time * b.wobbleSpeed + b.wobble) * 0.04;
     var r = b.r * s;
 
@@ -466,13 +488,37 @@
     if (t - lastTap < 40) return;
     lastTap = t;
     if (window.BubbleAudio) BubbleAudio.unlock();
+    lastInteractionTime = performance.now() / 1000;
     var p = eventPos(e);
     var b = hitTest(p.x, p.y);
     if (b) popBubble(b);
+    else spawnTapSparkle(p.x, p.y);
   }
 
-  canvas.addEventListener("pointerdown", onTap, { passive: false });
-  canvas.addEventListener("touchstart", onTap, { passive: false });
+  var muteBtn = document.getElementById("mute");
+  function syncMuteBtn() {
+    if (!muteBtn || !window.BubbleAudio) return;
+    var m = BubbleAudio.isMuted();
+    muteBtn.classList.toggle("muted", m);
+    muteBtn.setAttribute("aria-pressed", m ? "true" : "false");
+  }
+  if (muteBtn) {
+    muteBtn.addEventListener("click", function () {
+      if (window.BubbleAudio) {
+        BubbleAudio.unlock();
+        BubbleAudio.setMuted(!BubbleAudio.isMuted());
+      }
+      syncMuteBtn();
+    });
+    syncMuteBtn();
+  }
+
+  if (window.PointerEvent) {
+    canvas.addEventListener("pointerdown", onTap, { passive: false });
+  } else {
+    canvas.addEventListener("touchstart", onTap, { passive: false });
+    canvas.addEventListener("mousedown", onTap);
+  }
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function () {
