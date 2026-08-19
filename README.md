@@ -21,6 +21,10 @@ The old standalone Bubble Zoo site still works for now: https://rickray.github.i
 - **Snack Time** — feed hungry animals the food they want. A thought bubble shows the food, and the voice asks for it out loud. Lives in `games/snack-time/`.
 - **Hide and Seek** — find the animal you hear. Tap the sky to hear the question again. Lives in `games/hide-and-seek/`.
 - **Zoo Train** — hop animals onto the train cars. Lives in `games/zoo-train/`.
+- **ABC Zoo** — learn letters and find matching zoo animal friends. Lives in `games/abc-zoo/`.
+- **Zoo Count** — count 1 to 5 happy animals on the grass and tap the matching number tile. Lives in `games/zoo-count/`.
+- **Letter Pop** — pop floating letter bubbles to reveal hidden animals and hear their letters. Lives in `games/letter-pop/`.
+- **Number Train** — count and board animals into train cars 1, 2, and 3. Lives in `games/number-train/`.
 
 Every screen, including the home page, has a speaker button (top right) that mutes all sounds and voices. The setting is remembered across visits and across games.
 
