@@ -24,7 +24,7 @@ The old standalone Bubble Zoo site still works for now: https://rickray.github.i
 - **ABC Zoo** — learn letters and find matching zoo animal friends. Lives in `games/abc-zoo/`.
 - **Zoo Count** — count 1 to 5 happy animals on the grass and tap the matching number tile. Lives in `games/zoo-count/`.
 - **Letter Pop** — pop floating letter bubbles to reveal hidden animals and hear their letters. Lives in `games/letter-pop/`.
-- **Number Train** — count and board animals into train cars 1, 2, and 3. Lives in `games/number-train/`.
+- **Which Box** — watch animals hop into gift boxes, then guess which box they're in. Lives in `games/which-box/`.
 
 Every screen, including the home page, has a speaker button (top right) that mutes all sounds and voices. The setting is remembered across visits and across games.
 
