@@ -151,6 +151,10 @@ body {
   .crumb,
   .peek,
   .puff,
+  .spark,
+  .star-t,
+  .lb,
+  .ribbon,
   .tile-art,
   .welcome-tap,
   .star {
@@ -397,35 +401,40 @@ body {
 .lb2 { width: 26px; height: 26px; bottom: 20px; right: 20px; animation: bubble-drift 3.8s ease-in-out 0.6s infinite; }
 .lb3 { width: 20px; height: 20px; top: 26px; right: 28px; animation: bubble-drift 4.2s ease-in-out 1.4s infinite; }
 
-/* Tile Number Train: vibrant royal teal/orange/yellow gradient */
-.tile-numtrain {
-  background: linear-gradient(180deg, #38ef7d 0%, #11998e 55%, #185a9d 100%);
+/* Tile Which Box: bright festive gift-box ruby/gold gradient */
+.tile-whichbox {
+  background: linear-gradient(180deg, #ff4070 0%, #ff7043 55%, #ffb300 100%);
   border: 6px solid #fff;
-  box-shadow: 0 8px 0 #0d6b63, 0 14px 24px rgba(10, 60, 60, 0.18);
+  box-shadow: 0 8px 0 #c42045, 0 14px 24px rgba(120, 20, 40, 0.2);
   color: #fff;
-  text-shadow: 0 2px 0 rgba(10, 50, 50, 0.35);
+  text-shadow: 0 2px 0 rgba(140, 15, 45, 0.38);
 }
 
-.tile-numtrain:active {
+.tile-whichbox:active {
   transform: translateY(6px);
-  box-shadow: 0 2px 0 #0d6b63, 0 6px 12px rgba(10, 60, 60, 0.16);
+  box-shadow: 0 2px 0 #c42045, 0 6px 12px rgba(120, 20, 40, 0.16);
 }
 
-.car-dots {
+.box-ribbons {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.dot {
+.ribbon {
   position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
 }
 
-.d1 { width: 18px; height: 18px; top: 16px; left: 32px; animation: crumb-bob 3.2s ease-in-out infinite; }
-.d2 { width: 14px; height: 14px; top: 32px; right: 24px; animation: crumb-bob 3.2s ease-in-out 0.8s infinite; }
-.d3 { width: 12px; height: 12px; bottom: 22px; left: 40px; animation: crumb-bob 3.2s ease-in-out 1.6s infinite; }
+.r1 { width: 22px; height: 10px; top: 18px; left: 24px; transform: rotate(-15deg); animation: ribbon-float 3.6s ease-in-out infinite; }
+.r2 { width: 14px; height: 14px; top: 28px; right: 26px; border-radius: 50%; animation: ribbon-float 3.6s ease-in-out 0.8s infinite; }
+.r3 { width: 18px; height: 8px; bottom: 22px; right: 34px; transform: rotate(20deg); animation: ribbon-float 3.6s ease-in-out 1.6s infinite; }
+
+@keyframes ribbon-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-7px) scale(1.1); }
+}
 
 @media (orientation: landscape) {
   html, body {

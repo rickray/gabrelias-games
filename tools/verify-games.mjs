@@ -23,8 +23,8 @@ const jsFiles = [
   "games/zoo-count/js/game.js",
   "games/letter-pop/js/animals.js",
   "games/letter-pop/js/game.js",
-  "games/number-train/js/animals.js",
-  "games/number-train/js/game.js"
+  "games/which-box/js/animals.js",
+  "games/which-box/js/game.js"
 ];
 
 for (const f of jsFiles) {
@@ -45,7 +45,7 @@ const games = [
   "games/abc-zoo",
   "games/zoo-count",
   "games/letter-pop",
-  "games/number-train"
+  "games/which-box"
 ];
 
 for (const g of games) {
@@ -233,5 +233,30 @@ if (!letterPop.includes("drawLetterCard") || !letterPop.includes("targetLetter")
   throw new Error("Letter Pop must show the target letter on screen");
 }
 console.log("✓ Letter Pop shows the target letter on screen.");
+
+// 7. Verify Which Box has watch, ask, guess, and celebration logic
+const whichBox = fs.readFileSync(path.join(root, "games/which-box/js/game.js"), "utf8");
+if (!whichBox.includes("startWatchPhase") || !whichBox.includes("drawCelebration") || !whichBox.includes("onCorrectBox")) {
+  throw new Error("Which Box game logic missing watch/celebration phases");
+}
+
+const allAnimals = [
+  "lion", "elephant", "giraffe", "penguin", "frog", "panda", "bunny", "fish",
+  "owl", "pig", "duck", "cat", "butterfly", "turtle", "bee", "monkey"
+];
+for (const a of allAnimals) {
+  const whichBoxLines = [
+    a,
+    "Where's the " + a + "?",
+    "That's the " + a,
+    "You found the " + a + "!"
+  ];
+  for (const line of whichBoxLines) {
+    if (!segment(line)) {
+      throw new Error(`Which Box missing baked clip for "${line}"`);
+    }
+  }
+}
+console.log("✓ Which Box spoken lines and celebration logic verified.");
 
 console.log("\nALL VERIFICATIONS PASSED SUCCESSFULLY!");
