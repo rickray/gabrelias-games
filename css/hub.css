@@ -87,6 +87,7 @@ body {
 .tile:nth-child(6) { animation-delay: 0.24s; }
 .tile:nth-child(7) { animation-delay: 0.28s; }
 .tile:nth-child(8) { animation-delay: 0.32s; }
+.tile:nth-child(9) { animation-delay: 0.36s; }
 
 @keyframes tile-in {
   from {
@@ -155,6 +156,7 @@ body {
   .star-t,
   .lb,
   .ribbon,
+  .drop,
   .tile-art,
   .welcome-tap,
   .star {
@@ -434,6 +436,41 @@ body {
 @keyframes ribbon-float {
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-7px) scale(1.1); }
+}
+
+/* Tile Color Mix: vibrant rainbow paint palette gradient */
+.tile-colormix {
+  background: linear-gradient(180deg, #ff3366 0%, #ff9933 35%, #33cc66 70%, #3399ff 100%);
+  border: 6px solid #fff;
+  box-shadow: 0 8px 0 #b32048, 0 14px 24px rgba(120, 20, 50, 0.2);
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(140, 15, 50, 0.4);
+}
+
+.tile-colormix:active {
+  transform: translateY(6px);
+  box-shadow: 0 2px 0 #b32048, 0 6px 12px rgba(120, 20, 50, 0.16);
+}
+
+.paint-drops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.drop {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.d1 { width: 24px; height: 24px; top: 16px; left: 20px; animation: drop-drip 3.2s ease-in-out infinite; }
+.d2 { width: 16px; height: 16px; top: 26px; right: 24px; animation: drop-drip 3.2s ease-in-out 0.8s infinite; }
+.d3 { width: 20px; height: 20px; bottom: 22px; right: 30px; animation: drop-drip 3.2s ease-in-out 1.6s infinite; }
+
+@keyframes drop-drip {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.15); }
 }
 
 @media (orientation: landscape) {
