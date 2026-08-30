@@ -26,11 +26,11 @@
     },
     yellow: {
       name: "yellow",
-      hex: "#ffe014",
-      light: "#fff266",
-      dark: "#c79e00",
-      glow: "rgba(255, 224, 20, 0.45)",
-      splashHexes: ["#ffe014", "#ffeb55", "#fff6a0", "#ffffff"]
+      hex: "#ffd000",
+      light: "#fff666",
+      dark: "#9e6300",
+      glow: "rgba(255, 208, 0, 0.45)",
+      splashHexes: ["#ffd000", "#ffe242", "#fff6a0", "#ffffff"]
     },
     blue: {
       name: "blue",
@@ -39,6 +39,22 @@
       dark: "#0556b8",
       glow: "rgba(20, 138, 255, 0.45)",
       splashHexes: ["#148aff", "#4da8ff", "#94ccff", "#ffffff"]
+    },
+    white: {
+      name: "white",
+      hex: "#f8fbff",
+      light: "#ffffff",
+      dark: "#9cb3c4",
+      glow: "rgba(240, 248, 255, 0.55)",
+      splashHexes: ["#ffffff", "#eef5fb", "#d4e5f2", "#ffffff"]
+    },
+    black: {
+      name: "black",
+      hex: "#22262c",
+      light: "#4a525d",
+      dark: "#0f1115",
+      glow: "rgba(34, 38, 44, 0.45)",
+      splashHexes: ["#22262c", "#39414d", "#586577", "#ffffff"]
     },
     orange: {
       name: "orange",
@@ -50,34 +66,118 @@
     },
     green: {
       name: "green",
-      hex: "#1ed740",
-      light: "#60f07b",
-      dark: "#0c8c24",
-      glow: "rgba(30, 215, 64, 0.45)",
-      splashHexes: ["#1ed740", "#4ded69", "#94faa8", "#ffffff"]
+      hex: "#16c836",
+      light: "#52eb6e",
+      dark: "#0a821e",
+      glow: "rgba(22, 200, 54, 0.45)",
+      splashHexes: ["#16c836", "#44e062", "#8ff5a3", "#ffffff"]
     },
     purple: {
       name: "purple",
-      hex: "#aa22ff",
-      light: "#c86eff",
-      dark: "#6806a8",
-      glow: "rgba(170, 34, 255, 0.45)",
-      splashHexes: ["#aa22ff", "#bf52ff", "#db94ff", "#ffffff"]
+      hex: "#9418ea",
+      light: "#be5eff",
+      dark: "#5a0894",
+      glow: "rgba(148, 24, 234, 0.45)",
+      splashHexes: ["#9418ea", "#b243fc", "#d68eff", "#ffffff"]
+    },
+    pink: {
+      name: "pink",
+      hex: "#ff4d94",
+      light: "#ff8ab8",
+      dark: "#b81457",
+      glow: "rgba(255, 77, 148, 0.45)",
+      splashHexes: ["#ff4d94", "#ff75ac", "#ffaecf", "#ffffff"]
+    },
+    "light blue": {
+      name: "light blue",
+      hex: "#4ad5ff",
+      light: "#9ee8ff",
+      dark: "#0d8ec4",
+      glow: "rgba(74, 213, 255, 0.45)",
+      splashHexes: ["#4ad5ff", "#7ce1ff", "#c2f2ff", "#ffffff"]
+    },
+    lavender: {
+      name: "lavender",
+      hex: "#bf77ff",
+      light: "#e0b0ff",
+      dark: "#7e32c9",
+      glow: "rgba(191, 119, 255, 0.45)",
+      splashHexes: ["#bf77ff", "#d299ff", "#ecc7ff", "#ffffff"]
+    },
+    peach: {
+      name: "peach",
+      hex: "#ffaa6b",
+      light: "#ffd0a3",
+      dark: "#c96520",
+      glow: "rgba(255, 170, 107, 0.45)",
+      splashHexes: ["#ffaa6b", "#ffc08f", "#ffe0c4", "#ffffff"]
+    },
+    lime: {
+      name: "lime",
+      hex: "#8ce010",
+      light: "#bdf553",
+      dark: "#528c00",
+      glow: "rgba(140, 224, 16, 0.45)",
+      splashHexes: ["#8ce010", "#aef03e", "#d4faa0", "#ffffff"]
+    },
+    brown: {
+      name: "brown",
+      hex: "#8c4a1e",
+      light: "#b86f3b",
+      dark: "#54290a",
+      glow: "rgba(140, 74, 30, 0.45)",
+      splashHexes: ["#8c4a1e", "#a85f2c", "#cc8756", "#ffffff"]
+    },
+    gray: {
+      name: "gray",
+      hex: "#8d98a5",
+      light: "#bcc6d2",
+      dark: "#56606d",
+      glow: "rgba(141, 152, 165, 0.45)",
+      splashHexes: ["#8d98a5", "#aab4c0", "#d2dbe4", "#ffffff"]
     }
   };
 
-  /* Subtractive Paint Mixing Table */
+  /* 10 Target Colors and their 2-ingredient recipes */
+  var RECIPES = {
+    orange: ["red", "yellow"],
+    green: ["yellow", "blue"],
+    purple: ["red", "blue"],
+    pink: ["red", "white"],
+    "light blue": ["blue", "white"],
+    lavender: ["purple", "white"],
+    peach: ["orange", "white"],
+    lime: ["green", "white"],
+    brown: ["orange", "blue"],
+    gray: ["black", "white"]
+  };
+
+  /* Paint Mixing Table (commutative) */
   var MIX_TABLE = {
     "red+yellow": "orange",
     "yellow+red": "orange",
     "yellow+blue": "green",
     "blue+yellow": "green",
     "red+blue": "purple",
-    "blue+red": "purple"
+    "blue+red": "purple",
+    "red+white": "pink",
+    "white+red": "pink",
+    "blue+white": "light blue",
+    "white+blue": "light blue",
+    "purple+white": "lavender",
+    "white+purple": "lavender",
+    "orange+white": "peach",
+    "white+orange": "peach",
+    "green+white": "lime",
+    "white+green": "lime",
+    "orange+blue": "brown",
+    "blue+orange": "brown",
+    "black+white": "gray",
+    "white+black": "gray"
   };
 
-  var PRIMARIES = ["red", "yellow", "blue"];
-  var TARGETS = ["green", "orange", "purple"];
+  var ALL_INGREDIENTS = ["red", "yellow", "blue", "white", "black", "orange", "green", "purple"];
+  var TARGETS = ["orange", "green", "purple", "pink", "light blue", "lavender", "peach", "lime", "brown", "gray"];
 
   /* Game state machine:
      "start"     - waiting for initial tap if audio locked
@@ -90,11 +190,21 @@
   var gameState = "start";
   var lastInteraction = 0;
 
-  var currentTarget = "green";
+  var currentTarget = "orange";
   var lastTarget = "";
+  var targetDeck = [];
 
-  /* The three primary blobs on the grass */
+  /* The three paint blobs on the tray */
   var blobs = [];
+
+  /* Light paint tray / palette underneath the three blobs */
+  var paintTray = {
+    x: 0,
+    y: 0,
+    w: 0,
+    h: 0,
+    rad: 0
+  };
 
   /* Mixing Bowl State */
   var bowl = {
@@ -113,15 +223,17 @@
     swirlMixProgress: 0
   };
 
-  /* Target color badge at top */
-  var targetCard = {
+  /* Giant Target goal paint blob in the sky */
+  var targetBlob = {
     x: 0,
     y: 0,
-    w: 240,
-    h: 110,
+    baseRadius: 100,
+    r: 120,
     scale: 1,
+    bounceT: 0,
+    wiggleT: 0,
     show: true,
-    color: "green"
+    color: "orange"
   };
 
   /* Active pouring splash animation */
@@ -129,7 +241,7 @@
 
   /* Celebration State */
   var celebrateTime = 0;
-  var celebrateColor = "green";
+  var celebrateColor = "orange";
   var celebrateAuraAngle = 0;
   var celebrateShockwaves = [];
   var celebrateSparkles = [];
@@ -165,33 +277,29 @@
     return arr;
   }
 
+  function getNextTarget() {
+    if (targetDeck.length === 0) {
+      targetDeck = TARGETS.slice();
+      shuffle(targetDeck);
+      if (targetDeck.length > 1 && targetDeck[targetDeck.length - 1] === lastTarget) {
+        var first = targetDeck.pop();
+        targetDeck.unshift(first);
+      }
+    }
+    return targetDeck.pop();
+  }
+
   function layout() {
     var isLandscape = W > H;
     var unit = Math.min(W, H);
 
-    /* Target badge at top center */
-    var cardW = isLandscape ? Math.min(260, unit * 0.42) : Math.min(270, unit * 0.48);
-    var cardH = isLandscape ? Math.min(105, unit * 0.19) : Math.min(115, unit * 0.22);
-    targetCard.w = cardW;
-    targetCard.h = cardH;
-    targetCard.x = W * 0.5;
-    targetCard.y = Math.max(cardH * 0.55 + 16, H * 0.17);
-
-    /* Mixing bowl in center of scene */
-    var bowlSize = isLandscape ? Math.min(220, unit * 0.36) : Math.min(210, unit * 0.42);
-    bowl.w = bowlSize;
-    bowl.h = bowlSize * 0.58;
-    bowl.x = W * 0.5;
-    bowl.y = isLandscape ? H * 0.47 : H * 0.45;
-    bowl.r = bowlSize * 0.65;
-
-    /* 3 Primary Paint Blobs across the bottom lawn */
-    var blobRadius = isLandscape ? Math.min(75, unit * 0.13) : Math.min(70, unit * 0.14);
-    /* Large tap target radius > 150px diameter (r > 75px) */
-    var touchRadius = Math.max(80, blobRadius * 1.25);
-    var span = Math.min(W * 0.86, blobRadius * 5.2);
+    /* 3 Paint Blobs across the bottom lawn */
+    var blobRadius = isLandscape ? Math.min(78, unit * 0.13) : Math.min(68, unit * 0.135);
+    /* Extra large touch target for little kids */
+    var touchRadius = Math.max(90, blobRadius * 1.35);
+    var span = Math.min(W * 0.78, blobRadius * 4.9);
     var x0 = (W - span) / 2;
-    var y0 = isLandscape ? H * 0.78 : H * 0.79;
+    var y0 = isLandscape ? H * 0.81 : H * 0.80;
 
     var i, b;
     for (i = 0; i < blobs.length; i++) {
@@ -203,18 +311,46 @@
       b.r = touchRadius;
       b.baseRadius = blobRadius;
     }
+
+    /* Light paint tray / palette underneath the 3 blobs on the grass */
+    var trayPaddingX = blobRadius * 1.3;
+    paintTray.w = Math.min(W * 0.94, span + trayPaddingX * 2);
+    paintTray.h = blobRadius * 2.15;
+    paintTray.x = W * 0.5;
+    paintTray.y = y0 + 2;
+    paintTray.rad = Math.min(32, paintTray.h * 0.46);
+
+    /* Giant Target Goal Paint Blob in the sky at top center (roughly 1.5x to 1.7x mixing blob radius) */
+    var targetRadius = isLandscape
+      ? Math.min(blobRadius * 1.6, H * 0.22, unit * 0.22)
+      : Math.min(blobRadius * 1.6, H * 0.15, unit * 0.23);
+
+    targetBlob.baseRadius = targetRadius;
+    targetBlob.r = Math.max(90, targetRadius * 1.3); /* Giant tap target */
+    targetBlob.x = W * 0.5;
+    targetBlob.y = isLandscape
+      ? Math.max(targetRadius * 1.05 + 10, H * 0.20)
+      : Math.max(targetRadius * 1.05 + 16, H * 0.18);
+
+    /* Mixing bowl in center of scene */
+    var bowlSize = isLandscape ? Math.min(230, unit * 0.38) : Math.min(210, unit * 0.42);
+    bowl.w = bowlSize;
+    bowl.h = bowlSize * 0.58;
+    bowl.x = W * 0.5;
+    bowl.y = isLandscape ? H * 0.51 : H * 0.47;
+    bowl.r = bowlSize * 0.65;
   }
 
   function initBlobs() {
     blobs = [0, 1, 2].map(function (idx) {
       return {
         index: idx,
-        color: PRIMARIES[idx],
+        color: "red",
         x: 0,
         y: 0,
         w: 140,
         h: 120,
-        r: 85,
+        r: 90,
         baseRadius: 65,
         bounceT: 0,
         scaleT: 1,
@@ -230,14 +366,15 @@
     gameState = "play";
     lastInteraction = time;
 
-    /* Pick target different from last */
-    var opts = TARGETS.filter(function (t) { return t !== lastTarget; });
-    currentTarget = pick(opts);
+    /* Pick target cycling through all 10 */
+    currentTarget = getNextTarget();
     lastTarget = currentTarget;
 
-    targetCard.color = currentTarget;
-    targetCard.scale = 1.35;
-    targetCard.show = true;
+    targetBlob.color = currentTarget;
+    targetBlob.scale = 1.35;
+    targetBlob.bounceT = 0.4;
+    targetBlob.wiggleT = 0;
+    targetBlob.show = true;
 
     /* Reset bowl */
     bowl.fillLevel = 0;
@@ -248,11 +385,20 @@
     bowl.swirlMixProgress = 0;
     bowl.wiggleT = 0;
 
-    /* Shuffle the 3 primary blobs */
-    var prims = PRIMARIES.slice();
-    shuffle(prims);
+    /* Pick the 2 required ingredients for this target + 1 decoy */
+    var pair = RECIPES[currentTarget] || ["red", "yellow"];
+    var ing1 = pair[0];
+    var ing2 = pair[1];
+    var decoyPool = ALL_INGREDIENTS.filter(function (ing) {
+      return ing !== ing1 && ing !== ing2;
+    });
+    var decoy = pick(decoyPool);
+
+    var roundPaints = [ing1, ing2, decoy];
+    shuffle(roundPaints);
+
     for (var i = 0; i < 3; i++) {
-      blobs[i].color = prims[i];
+      blobs[i].color = roundPaints[i];
       blobs[i].selected = false;
       blobs[i].bounceT = 0;
       blobs[i].scaleT = 1;
@@ -261,7 +407,7 @@
 
     pourSplashes = [];
 
-    scene.sparkle(targetCard.x, targetCard.y);
+    scene.sparkle(targetBlob.x, targetBlob.y);
     GGAudio.pop();
 
     promptMakeSpeech();
@@ -333,7 +479,7 @@
         GGAudio.tap();
         spawnSplashParticles(bowl.x, bowl.y + bowl.h * 0.1, b.color, 16);
 
-        var mixResult = MIX_TABLE[bowl.firstColor + "+" + bowl.secondColor];
+        var mixResult = MIX_TABLE[bowl.firstColor + "+" + bowl.secondColor] || null;
         bowl.mixedColor = mixResult;
 
         gameState = "swirling";
@@ -345,11 +491,11 @@
   function finishSwirlMix() {
     var resultColor = bowl.mixedColor;
 
-    if (resultColor === currentTarget) {
+    if (resultColor && resultColor === currentTarget) {
       /* Correct Mix! */
       triggerCorrectCelebration(resultColor);
     } else {
-      /* Wrong Mix! Gentle, no fail */
+      /* Wrong or Unknown Mix! Gentle, no fail */
       triggerWrongMix(resultColor);
     }
   }
@@ -359,11 +505,19 @@
     bowl.wiggleT = 0.65;
     GGAudio.wiggle();
 
-    /* Announce what they made, then repeat the goal */
-    GGAudio.say("That's " + resultColor + ". Make " + currentTarget + "!", {
-      rate: 0.86,
-      pitch: 1.18
-    });
+    if (resultColor) {
+      /* Announce what they made, then repeat the goal */
+      GGAudio.say("That's " + resultColor + ". Make " + currentTarget + "!", {
+        rate: 0.86,
+        pitch: 1.18
+      });
+    } else {
+      /* Unknown mix: don't name muddy/fail color, just repeat target prompt */
+      GGAudio.say("Make " + currentTarget + "!", {
+        rate: 0.86,
+        pitch: 1.2
+      });
+    }
 
     /* After brief viewing, empty the bowl and allow re-trying */
     setTimeout(function () {
@@ -392,7 +546,7 @@
     celebrateSplatDrops = [];
     celebrateCannonTimer = 0;
 
-    var cDef = COLOR_DEFS[resultColor];
+    var cDef = COLOR_DEFS[resultColor] || COLOR_DEFS.orange;
 
     /* Central Hero Splash Blob zooms to > 50% of the screen */
     celebrateHeroBlob.x = bowl.x;
@@ -425,7 +579,7 @@
   }
 
   function triggerCelebrationFireworks() {
-    var cDef = COLOR_DEFS[celebrateColor];
+    var cDef = COLOR_DEFS[celebrateColor] || COLOR_DEFS.orange;
     var origins = [
       { x: W * 0.2, y: H * 0.85 },
       { x: W * 0.5, y: H * 0.5 },
@@ -486,7 +640,7 @@
 
   function spawnColorConfetti(x, y, colorName, count) {
     scene.confetti(x, y);
-    var cDef = COLOR_DEFS[colorName] || COLOR_DEFS.green;
+    var cDef = COLOR_DEFS[colorName] || COLOR_DEFS.orange;
     for (var i = 0; i < count; i++) {
       var ang = rand(0, Math.PI * 2);
       var spd = rand(80, 260);
@@ -518,11 +672,11 @@
     return best;
   }
 
-  function hitTargetCard(x, y) {
-    if (!targetCard.show) return false;
-    var dx = Math.abs(x - targetCard.x);
-    var dy = Math.abs(y - targetCard.y);
-    return dx < targetCard.w * 0.6 && dy < targetCard.h * 0.65;
+  function hitTargetBlob(x, y) {
+    if (!targetBlob.show) return false;
+    var dx = x - targetBlob.x;
+    var dy = y - targetBlob.y;
+    return (dx * dx + dy * dy) < (targetBlob.r * targetBlob.r);
   }
 
   /* ----------------------------------------------------------------- update */
@@ -536,9 +690,15 @@
       lastInteraction = time;
     }
 
-    /* Target badge scale decay */
-    if (targetCard.scale > 1) {
-      targetCard.scale = Math.max(1, targetCard.scale - dt * 2.2);
+    /* Target blob scale & bounce decay */
+    if (targetBlob.scale > 1) {
+      targetBlob.scale = Math.max(1, targetBlob.scale - dt * 2.2);
+    }
+    if (targetBlob.bounceT > 0) {
+      targetBlob.bounceT = Math.max(0, targetBlob.bounceT - dt);
+    }
+    if (targetBlob.wiggleT > 0) {
+      targetBlob.wiggleT = Math.max(0, targetBlob.wiggleT - dt);
     }
 
     /* Blobs update */
@@ -706,20 +866,72 @@
     ctx.fill();
 
     ctx.strokeStyle = cDef.dark;
-    ctx.lineWidth = Math.max(3, radius * 0.06);
+    ctx.lineWidth = Math.max(3.5, radius * 0.075);
     ctx.stroke();
 
     /* Large glossy highlight */
-    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
     ctx.beginPath();
     ctx.ellipse(-radius * 0.32, -radius * 0.35, radius * 0.38, radius * 0.22, -0.4, 0, Math.PI * 2);
     ctx.fill();
 
     /* Secondary specular dot */
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
     ctx.beginPath();
     ctx.arc(-radius * 0.18, -radius * 0.48, radius * 0.09, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* Draw the light porcelain/wooden palette tray underneath the mixing blobs */
+  function drawPaintTray() {
+    if (!paintTray.w || !paintTray.h) return;
+
+    var x = paintTray.x;
+    var y = paintTray.y;
+    var w = paintTray.w;
+    var h = paintTray.h;
+    var rad = paintTray.rad;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    /* Tray Drop Shadow on grass */
+    ctx.fillStyle = "rgba(10, 45, 20, 0.28)";
+    ctx.beginPath();
+    ctx.ellipse(0, h * 0.52, w * 0.5, h * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Tray Body - soft ivory/white porcelain palette */
+    var trayGrad = ctx.createLinearGradient(0, -h * 0.5, 0, h * 0.5);
+    trayGrad.addColorStop(0, "#ffffff");
+    trayGrad.addColorStop(0.65, "#f6fafe");
+    trayGrad.addColorStop(1, "#e5edf5");
+
+    ctx.fillStyle = trayGrad;
+    drawRoundedRect(0, 0, w, h, rad);
+    ctx.fill();
+
+    /* Crisp border */
+    ctx.strokeStyle = "#c8d9e6";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    /* Inner gloss on top rim */
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.beginPath();
+    ctx.ellipse(0, -h * 0.32, w * 0.44, h * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Soft indented wells / grooves under each blob position */
+    for (var i = 0; i < blobs.length; i++) {
+      var bx = blobs[i].x - x;
+      ctx.fillStyle = "rgba(180, 200, 218, 0.35)";
+      ctx.beginPath();
+      ctx.ellipse(bx, h * 0.08, blobs[i].baseRadius * 0.92, blobs[i].baseRadius * 0.36, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.restore();
   }
@@ -814,8 +1026,9 @@
       ctx.fill();
     } else if (bowl.fillLevel === 2) {
       /* Two colors or fully mixed color */
-      if (gameState === "swirling" && cDef1 && cDef2 && mixDef) {
+      if (gameState === "swirling" && cDef1 && cDef2) {
         var mixProg = bowl.swirlMixProgress;
+        var blendHex = mixDef ? mixDef.hex : "#7a8894";
 
         /* Swirling spiral halves blending into mixed result */
         ctx.save();
@@ -825,7 +1038,7 @@
         ctx.clip();
 
         /* Background blends into mixed color */
-        ctx.fillStyle = mixDef.hex;
+        ctx.fillStyle = blendHex;
         ctx.fillRect(-lw * 1.2, -lh * 1.2, lw * 2.4, lh * 2.4);
 
         /* Two spinning yin-yang swirls of primary colors fading as mix progresses */
@@ -867,81 +1080,27 @@
         ctx.beginPath();
         ctx.ellipse(-lw * 0.3, -lh * 1.1, lw * 0.4, lh * 0.25, -0.2, 0, Math.PI * 2);
         ctx.fill();
+      } else if (cDef1 && cDef2) {
+        /* Unknown mix in wrong state before reset */
+        ctx.fillStyle = "#7a8894";
+        ctx.beginPath();
+        ctx.ellipse(0, -lh * 0.9, lw, lh, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   }
 
-  /* Draw Target Color Card Badge at Top */
-  function drawTargetCard() {
-    if (!targetCard.show || !targetCard.color) return;
+  /* Draw Giant Target Goal Paint Blob in Sky */
+  function drawTargetBlob() {
+    if (!targetBlob.show || !targetBlob.color) return;
 
-    var x = targetCard.x;
-    var y = targetCard.y;
-    var w = targetCard.w;
-    var h = targetCard.h;
-    var s = targetCard.scale;
-    var rad = Math.min(w, h) * 0.38;
-    var tColor = COLOR_DEFS[targetCard.color] || COLOR_DEFS.green;
+    var hop = targetBlob.bounceT > 0 ? -Math.sin((1 - targetBlob.bounceT / 0.4) * Math.PI) * 16 : 0;
+    var s = targetBlob.scale;
 
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(targetBlob.x, targetBlob.y + hop);
     ctx.scale(s, s);
-
-    /* Soft shadow */
-    ctx.fillStyle = "rgba(20, 60, 90, 0.22)";
-    ctx.beginPath();
-    ctx.ellipse(0, h * 0.46, w * 0.48, h * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* Pill badge background */
-    var bg = ctx.createLinearGradient(0, -h * 0.5, 0, h * 0.5);
-    bg.addColorStop(0, "#ffffff");
-    bg.addColorStop(1, "#fff6d8");
-
-    ctx.fillStyle = bg;
-    drawRoundedRect(0, 0, w, h, rad);
-    ctx.fill();
-
-    ctx.strokeStyle = "#ff9a1a";
-    ctx.lineWidth = 5.5;
-    ctx.stroke();
-
-    /* Inner gloss */
-    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-    ctx.beginPath();
-    ctx.ellipse(0, -h * 0.22, w * 0.38, h * 0.18, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* Target Paint Swatch Circle inside badge */
-    var swatchR = h * 0.32;
-    var swatchX = -w * 0.26;
-    var swatchY = 0;
-
-    var sGrad = ctx.createRadialGradient(swatchX - swatchR * 0.3, swatchY - swatchR * 0.3, swatchR * 0.1, swatchX, swatchY, swatchR);
-    sGrad.addColorStop(0, tColor.light);
-    sGrad.addColorStop(0.65, tColor.hex);
-    sGrad.addColorStop(1, tColor.dark);
-    ctx.fillStyle = sGrad;
-    ctx.beginPath();
-    ctx.arc(swatchX, swatchY, swatchR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = tColor.dark;
-    ctx.lineWidth = 3.5;
-    ctx.stroke();
-
-    /* Swatch Gloss */
-    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-    ctx.beginPath();
-    ctx.ellipse(swatchX - swatchR * 0.3, swatchY - swatchR * 0.3, swatchR * 0.35, swatchR * 0.2, -0.4, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* Text: "Make green!" */
-    ctx.fillStyle = "#2d3748";
-    ctx.font = "900 " + Math.floor(h * 0.34) + "px 'Avenir Next', 'Segoe UI', system-ui, sans-serif";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Make " + targetCard.color + "!", swatchX + swatchR + 12, 0);
-
+    drawPaintBlob(0, 0, targetBlob.baseRadius, targetBlob.color, targetBlob.wiggleT, false);
     ctx.restore();
   }
 
@@ -991,13 +1150,12 @@
   /* HUGE Celebration Render: Color floods the screen, sunburst, giant zoom splash */
   function drawCelebration() {
     var i;
-    var cDef = COLOR_DEFS[celebrateColor] || COLOR_DEFS.green;
+    var cDef = COLOR_DEFS[celebrateColor] || COLOR_DEFS.orange;
 
     /* 1. Screen Flood / Hue Takeover Flash */
-    var pulse = Math.sin(celebrateTime * 8) * 0.5 + 0.5;
     var flashGrad = ctx.createRadialGradient(W * 0.5, H * 0.46, 20, W * 0.5, H * 0.46, Math.max(W, H) * 0.75);
     flashGrad.addColorStop(0, cDef.glow);
-    flashGrad.addColorStop(0.6, cDef.glow.replace("0.45", "0.22"));
+    flashGrad.addColorStop(0.6, cDef.glow.replace("0.45", "0.22").replace("0.55", "0.22"));
     flashGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.fillStyle = flashGrad;
     ctx.fillRect(0, 0, W, H);
@@ -1087,8 +1245,8 @@
     /* 1. Garden Backdrop (sky, sun, clouds, hills, flowers, butterflies) */
     scene.draw(ctx);
 
-    /* 2. Target Goal Badge at Top */
-    drawTargetCard();
+    /* 2. Target Goal Paint Blob in Sky */
+    drawTargetBlob();
 
     /* 3. Garden Mixing Bowl */
     drawBowl();
@@ -1099,14 +1257,17 @@
       drawPaintBlob(p.x, p.y, 28, p.color, 0, false);
     }
 
-    /* 5. Three Primary Paint Blobs on Lawn */
+    /* 5. Light Paint Tray / Palette on Lawn */
+    drawPaintTray();
+
+    /* 6. Three Paint Blobs on Tray */
     for (var j = 0; j < blobs.length; j++) {
       var b = blobs[j];
       var bounceHop = b.bounceT > 0 ? -Math.sin((1 - b.bounceT / 0.45) * Math.PI) * 22 : 0;
       drawPaintBlob(b.x, b.y + bounceHop, b.baseRadius, b.color, b.wiggleT, b.selected);
     }
 
-    /* 6. Paint Drips & Particles */
+    /* 7. Paint Drips & Particles */
     for (var k = 0; k < drips.length; k++) {
       var d = drips[k];
       ctx.globalAlpha = Math.max(0, 1 - d.t / d.life) * 0.9;
@@ -1117,15 +1278,15 @@
       ctx.globalAlpha = 1;
     }
 
-    /* 7. Scene Confetti / Sparkle Juice */
+    /* 8. Scene Confetti / Sparkle Juice */
     scene.drawParticles(ctx);
 
-    /* 8. Start Prompt if audio locked */
+    /* 9. Start Prompt if audio locked */
     if (gameState === "start") {
       drawStartPrompt();
     }
 
-    /* 9. HUGE Celebration Overlay */
+    /* 10. HUGE Celebration Overlay */
     if (gameState === "celebrate") {
       drawCelebration();
     }
@@ -1165,10 +1326,12 @@
         return;
       }
 
-      /* Tapping target card repeats the prompt */
-      if (hitTargetCard(x, y)) {
+      /* Tapping target blob repeats the prompt */
+      if (hitTargetBlob(x, y)) {
         GGAudio.bounce();
-        targetCard.scale = 1.25;
+        targetBlob.scale = 1.3;
+        targetBlob.bounceT = 0.35;
+        scene.sparkle(targetBlob.x, targetBlob.y);
         promptMakeSpeech();
         return;
       }
@@ -1185,7 +1348,7 @@
         return;
       }
 
-      /* Check primary blob taps */
+      /* Check primary / ingredient blob taps */
       var b = hitBlob(x, y);
       if (b) {
         onBlobTap(b);
