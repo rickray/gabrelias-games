@@ -8,7 +8,7 @@
    VERSION only needs bumping to force-drop everything at once, e.g. after
    renaming files. Ordinary content changes now propagate on their own. */
 
-var VERSION = "10";
+var VERSION = "11";
 var CACHE = "gabrelias-games-v" + VERSION;
 
 var FILES = [
