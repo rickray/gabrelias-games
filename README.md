@@ -25,6 +25,7 @@ The old standalone Bubble Zoo site still works for now: https://rickray.github.i
 - **Zoo Count** — count 1 to 5 happy animals on the grass and tap the matching number tile. Lives in `games/zoo-count/`.
 - **Letter Pop** — pop floating letter bubbles to reveal hidden animals and hear their letters. Lives in `games/letter-pop/`.
 - **Which Box** — watch animals hop into gift boxes, then guess which box they're in. Lives in `games/which-box/`.
+- **Color Mix** — mix bright paint colors in the garden bowl to make target colors. Lives in `games/color-mix/`.
 
 Every screen, including the home page, has a speaker button (top right) that mutes all sounds and voices. The setting is remembered across visits and across games.
 

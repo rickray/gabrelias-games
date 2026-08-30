@@ -24,7 +24,8 @@ const jsFiles = [
   "games/letter-pop/js/animals.js",
   "games/letter-pop/js/game.js",
   "games/which-box/js/animals.js",
-  "games/which-box/js/game.js"
+  "games/which-box/js/game.js",
+  "games/color-mix/js/game.js"
 ];
 
 for (const f of jsFiles) {
@@ -36,7 +37,7 @@ for (const f of jsFiles) {
 }
 console.log(`✓ All ${jsFiles.length} JavaScript files passed node -c syntax checks.`);
 
-// 2. Check all 8 games have index.html and that all referenced scripts and stylesheets exist
+// 2. Check all 9 games have index.html and that all referenced scripts and stylesheets exist
 const games = [
   "games/bubble-zoo",
   "games/snack-time",
@@ -45,7 +46,8 @@ const games = [
   "games/abc-zoo",
   "games/zoo-count",
   "games/letter-pop",
-  "games/which-box"
+  "games/which-box",
+  "games/color-mix"
 ];
 
 for (const g of games) {
@@ -83,7 +85,7 @@ for (const g of games) {
 }
 console.log(`✓ All ${games.length} game index.html files verified with valid scripts, css links, and home buttons.`);
 
-// 3. Verify root index.html has 8 tiles and links
+// 3. Verify root index.html has 9 tiles and links
 const rootHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 for (const g of games) {
   const expectedLink = `${g}/index.html`;
@@ -91,7 +93,7 @@ for (const g of games) {
     throw new Error(`Root index.html is missing link to ${expectedLink}`);
   }
 }
-console.log("✓ Root index.html links to all 8 game tiles.");
+console.log("✓ Root index.html links to all 9 game tiles.");
 
 // 4. Verify sw.js FILES array contains all existing game files
 const swContent = fs.readFileSync(path.join(root, "sw.js"), "utf8");
@@ -258,5 +260,12 @@ for (const a of allAnimals) {
   }
 }
 console.log("✓ Which Box spoken lines and celebration logic verified.");
+
+// 8. Verify Color Mix has mix table, bowl, primary blobs, and celebration logic
+const colorMix = fs.readFileSync(path.join(root, "games/color-mix/js/game.js"), "utf8");
+if (!colorMix.includes("drawCelebration") || !colorMix.includes("drawBowl") || !colorMix.includes("MIX_TABLE")) {
+  throw new Error("Color Mix game logic missing bowl, mix table, or celebration");
+}
+console.log("✓ Color Mix game logic and celebration verified.");
 
 console.log("\nALL VERIFICATIONS PASSED SUCCESSFULLY!");
